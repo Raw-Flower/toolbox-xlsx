@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+*.sqlite3
+*.log
+
+# Django migrations
+migrations/
+!migrations/__init__.py
+
+# Temps
+.vscode/
+
+# Media files
+media/
