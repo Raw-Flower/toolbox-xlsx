@@ -1,0 +1,32 @@
+{% extends 'core/base/main_base.html' %}
+{% block title %}
+    XLSX - {% block subtitle %}{% endblock subtitle %}
+{% endblock title %}
+{% block body %}
+<div class='row'>
+    <div class='col-3'>
+        <div class="card">
+            <div class="card-header">Navigation</div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item"><a href='{% url "xlsx:index" %}' class="card-link">Index</a></li>
+                <li class="list-group-item">
+                    <span class='dropdown-toggle' data-bs-toggle="collapse" data-bs-target="#collapseOne" style='cursor:pointer;'>Models</span>
+                    <div id="collapseOne" class="collapse">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item"><a href='#Product' class="card-link">Product</a></li>
+                            <li class="list-group-item"><a href='#Category' class="card-link">Category</a></li>
+                            <li class="list-group-item"><a href='#Supplier' class="card-link">Supplier</a></li>
+                        </ul>
+                    </div>
+                </li>
+                <li class="list-group-item"><a href='#' class="card-link">Batch creation(By Excel)</a></li>
+                <li class="list-group-item"><a href='#' class="card-link">Product grid</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class='col-9'>
+        {% block content %}
+        {% endblock content %}
+    </div>
+</div>
+{% endblock body %}
