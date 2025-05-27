@@ -1,0 +1,17 @@
+{% extends 'xlsx/base/base.html' %}
+{% block subtitle %}Product add{% endblock subtitle %}
+{% block content %}
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">XLSX Module</h5>
+            <p class="card-text">flexible and modular Excel import/export tool built for Django. It allows you to upload structured .xlsx files, validate and process them into database records, and export model data back into clean, customizable Excel templates.</p>
+            <h5>Features:</h5>
+            <ul>
+                <li><span class='fw-bold'>Excel import: </span>Upload .xlsx files with structured data to create or update records in bulk.</li>
+                <li><span class='fw-bold'>Excel export: </span>Export model data to a clean .xlsx file with headers and formatted columns.</li>
+                <li><span class='fw-bold'>Downloadable Template: </span>Generate and download a blank Excel template matching your model fields.</li>
+                <li><span class='fw-bold'> DRY Configuration: </span>Reusable import/export logic per model with minimal configuration.</li>
+            </ul>
+        </div>
+    </div>
+{% endblock content %}
