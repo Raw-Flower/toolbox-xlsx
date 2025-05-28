@@ -87,6 +87,7 @@ class Supplier(models.Model):
 class Product(models.Model):
     code = models.CharField(
         verbose_name=_("Code"), 
+        help_text='Format (AAA-000)',
         max_length=7, 
         unique=True,
         validators=[

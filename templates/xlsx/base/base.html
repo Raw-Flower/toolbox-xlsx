@@ -9,13 +9,14 @@
             <div class="card-header">Navigation</div>
             <ul class="list-group list-group-flush">
                 <li class="list-group-item"><a href='{% url "xlsx:index" %}' class="card-link">Index</a></li>
+                <li class="list-group-item"><a href='{% url "xlsx:form_view" model="product" %}' class="card-link">Form test</a></li>
                 <li class="list-group-item">
-                    <span class='dropdown-toggle' data-bs-toggle="collapse" data-bs-target="#collapseOne" style='cursor:pointer;'>Models</span>
-                    <div id="collapseOne" class="collapse">
+                    <span class='dropdown-toggle' data-bs-toggle="collapse" data-bs-target="#AddLinks" style='cursor:pointer;'>Models</span>
+                    <div id="AddLinks" class="collapse">
                         <ul class="list-group list-group-flush">
-                            <li class="list-group-item"><a href='#Product' class="card-link">Product</a></li>
-                            <li class="list-group-item"><a href='#Category' class="card-link">Category</a></li>
-                            <li class="list-group-item"><a href='#Supplier' class="card-link">Supplier</a></li>
+                            <li class="list-group-item"><a href='{% url "xlsx:product_grid" %}' class="card-link">Product</a></li>
+                            <li class="list-group-item"><a href='{% url "xlsx:category_grid" %}' class="card-link">Category</a></li>
+                            <li class="list-group-item"><a href='{% url "xlsx:supplier_grid" %}' class="card-link">Supplier</a></li>
                         </ul>
                     </div>
                 </li>

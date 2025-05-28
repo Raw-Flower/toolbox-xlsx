@@ -1,0 +1,23 @@
+{% extends 'xlsx/base/base.html' %}
+{% block subtitle %}Add {{label}}{% endblock subtitle %}
+{% block content %}
+    <div class="card">
+        <div class="card-body">
+            {% if form %}
+                <form method='POST' novalidate>
+                    {% include 'core/includes/form_render.html' with form=form title='Product information' only  %}
+                    <div class='mt-2'>
+                        {% csrf_token %}
+                        <button class='btn btn-success' type='submit'><i class="bi bi-plus-circle"></i> Add {{label}}</button>
+                    </div>
+                </form>
+            {% else %}
+                <div class='mt-2'>
+                    <h6>No form provide</h6>
+                </div>
+            {% endif %}
+            <hr>
+            <a href='{% url "xlsx:product_grid" %}' class='btn btn-warning'>Return to grid</a>
+        </div>
+    </div>
+{% endblock content %}
