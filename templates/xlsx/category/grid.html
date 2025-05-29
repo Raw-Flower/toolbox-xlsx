@@ -12,14 +12,14 @@
                 </p>
                 <div class="collapse" id="filterBox">
                     <div class="card card-body">
-                        <form class="row g-1" novalidate method='GET'>
-                            {% include 'core/includes/form_render.html' with form=filter_form title='Available filters' only  %}
-                            {% if filter_form %}
+                        {% if filter_form %}
+                            <form class="row g-1" novalidate method='GET'>
+                                {% include 'core/includes/form_render.html' with form=filter_form title='Available filters' only  %}
                                 <div class='mt-2'>
                                     <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i> Search</button>
                                 </div>
-                            {% endif %}
-                        </form>
+                            </form>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -37,9 +37,9 @@
                             {% if category_records|length > 0 %}
                                 {% for item in category_records %}
                                     <tr>
-                                        <td><a>{{item.name}}</a></td>
+                                        <td><a href='{% url "xlsx:category_update" item.id %}'>{{item.name}}</a></td>
                                         <td>
-                                            <span><a href='#' title='Edit'><i class="bi bi-pencil"></i></a></span>
+                                            <span><a href='{% url "xlsx:category_update" item.id %}' title='Edit'><i class="bi bi-pencil"></i></a></span>
                                             <span><a href='#' title='Delete'><i class="bi bi-trash"></i></a></span>
                                         </td>
                                     </tr>

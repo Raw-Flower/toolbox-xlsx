@@ -1,15 +1,16 @@
 {% extends 'xlsx/base/base.html' %}
-{% block subtitle %}Supplier add{% endblock subtitle %}
+{% block subtitle %}Update category{% endblock subtitle %}
 {% block content %}
 {% include 'core/includes/messages.html' %}
     <div class="card">
         <div class="card-body">
             {% if form %}
                 <form method='POST' novalidate>
-                    {% include 'core/includes/form_render.html' with form=form title='Supplier information' only  %}
+                    <h4 class='card-title'>Category details(<span class='fs-5'>{{object.id}}</span>)</h4>
+                    {% include 'core/includes/form_render.html' with form=form only  %}
                     <div class='mt-2'>
                         {% csrf_token %}
-                        <button class='btn btn-success' type='submit'><i class="bi bi-plus-circle"></i> Add Supplier</button>
+                        <button class='btn btn-success' type='submit'></i><i class="bi bi-pencil-square"></i> Update category</button>
                     </div>
                 </form>
             {% else %}
@@ -18,7 +19,7 @@
                 </div>
             {% endif %}
             <hr>
-            <a href='{% url "xlsx:supplier_grid" %}' class='btn btn-warning'>Return to grid</a>
+            <a href='{% url "xlsx:category_grid" %}' class='btn btn-warning'>Return to grid</a>
         </div>
     </div>
 {% endblock content %}
