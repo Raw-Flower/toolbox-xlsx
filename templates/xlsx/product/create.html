@@ -1,6 +1,7 @@
 {% extends 'xlsx/base/base.html' %}
 {% block subtitle %}Product add{% endblock subtitle %}
 {% block content %}
+{% include 'core/includes/messages.html' %}
     <div class="card">
         <div class="card-body">
             {% if form %}
