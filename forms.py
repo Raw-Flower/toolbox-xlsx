@@ -1,6 +1,7 @@
 from django import forms
 from django.core.validators import RegexValidator
 from .models import Product, Category, Supplier, Status
+from .utils import getCurrentApps
 
 class ProductForm(forms.ModelForm):
     class Meta:
@@ -156,4 +157,20 @@ class SupplierFilterForm(forms.Form):
          validators=[
             RegexValidator(regex='^[0-9]+$',message='This field contains unvalid characters.')
         ]
+    )
+    
+class xlsx_initConfigForm(forms.Form):
+    app = forms.ChoiceField(
+        label='App',
+        help_text='Apps located physically in your project',
+        choices=getCurrentApps,
+        validators=[
+            RegexValidator(regex='^[a-zA-Z0-9_]+$',message='This field contains invalid characters.')
+        ]
+    )
+    
+    model = forms.ChoiceField(
+        label='Model',
+        help_text='Models related to the app selected',
+        choices=[('','Select an app first')]
     )

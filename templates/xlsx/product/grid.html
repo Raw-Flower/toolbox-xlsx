@@ -5,11 +5,11 @@
 {% include 'core/includes/messages.html' %}
     <div class="card">
         <div class="card-body">
-
             <div class="col-lg-12">
                 <p class="d-inline-flex gap-1">
                     <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#filterBox"><i class="bi bi-funnel"></i></button>
                     <a href='{% url "xlsx:product_add" %}' class='btn btn-success'><i class="bi bi-plus-circle"></i> Add new product</a>
+                    <a href='{% url "xlsx:config" %}' class='btn btn-warning'><i class="bi bi-file-earmark-excel"></i> Add XLSX configuration</a>
                 </p>
                 <div class="collapse" id="filterBox">
                     <div class="card card-body">

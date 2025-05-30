@@ -1,16 +1,31 @@
 from django.urls import reverse_lazy
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
-from django.views.generic import CreateView, ListView, UpdateView, TemplateView
+from django.views.generic import CreateView, ListView, UpdateView, TemplateView, FormView
 from django.contrib import messages
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Q
 from .models import Product, Category, Supplier
-from .forms import ProductForm, ProductFilterForm, CategoryForm, CategoryFilterForm, SupplierForm, SupplierFilterForm
+from .forms import ProductForm, ProductFilterForm, CategoryForm, CategoryFilterForm, SupplierForm, SupplierFilterForm, xlsx_initConfigForm
 from core.utils import get_query_conditions
+from .utils import getModelsByApp
 
 # BASIC
 class IndexView(TemplateView):
     template_name = 'xlsx/basic/index.html'
+    
+class StartConfig(FormView):
+    form_class = xlsx_initConfigForm
+    template_name = 'xlsx/configuration/main_config.html'
+    
+# FUNCTIONS
+def get_models(request,app_name):
+    models = getModelsByApp(app_name)
+    return JsonResponse(
+        data={
+            'models':models
+        }
+    )
     
 # PRODUCT
 class ProductListView(ListView):
