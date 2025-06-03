@@ -8,6 +8,53 @@ class Status(models.IntegerChoices):
     disable = (0,'Inactive')
     __empty__ = ('-- Status --')
     
+class Configuration(models.Model):
+    app = models.CharField(
+        verbose_name=_("App"), 
+        max_length=255,
+        validators=[
+            RegexValidator(
+                regex='^[a-z_][a-z0-9_]*$',
+                message=_('App name not allow.'),
+                code='app_name_wrong'
+            )
+        ]
+    )
+    
+    model = models.CharField(
+        verbose_name=_("Model"), 
+        max_length=255,
+        validators=[
+            RegexValidator(
+                regex='^[a-zA-Z]+$',
+                message=_('This field contains invalid characters.'),
+                code='invalid_characters'
+            )
+        ]
+    )
+    
+    status = models.IntegerField(_("Status"), choices=Status, default=Status.enable)
+    createtime = models.DateTimeField(auto_now_add=True)
+    updatetime = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = 'Configuration'
+        verbose_name_plural = 'Configurations'
+        ordering = ['id']
+        
+    def __str__(self):
+        return f'{self.app}.{self.model}'
+    
+class Template(models.Model):
+    '''
+    config FK
+    type Select(export/import)
+    column
+    value
+    template_file
+    '''
+    pass
+        
 class Category(models.Model):
     name = models.CharField(
         verbose_name=_("Name"),
@@ -93,7 +140,7 @@ class Product(models.Model):
         validators=[
             MinLengthValidator(7),
             RegexValidator(
-                regex='^[A-Z]{3}-\d{3}$',
+                regex='^[A-Z]{3}-[0-9]{3}$',
                 message=_('Code value must match with the following pattern (3 values from A-Z, - and 3 numbers), example COD-001.'),
                 code='code_not_valid'
             )

@@ -1,7 +1,60 @@
 from django import forms
 from django.core.validators import RegexValidator
-from .models import Product, Category, Supplier, Status
-from .utils import getCurrentApps
+from django.apps import apps
+from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
+from .models import Product, Category, Supplier, Status, Configuration
+from .utils import getCurrentApps, getCurrentModels
+
+class ConfigurationForm(forms.ModelForm):
+    app = forms.ChoiceField(
+        label='App',
+        help_text='Apps located physically in your project',
+        choices=getCurrentApps
+    )
+    
+    model = forms.ChoiceField(
+        label='Model',
+        help_text='Models related to the app selected',
+        choices=getCurrentModels
+    )
+    
+    class Meta:
+        model = Configuration
+        fields = ['app','model']
+    
+    def clean_app(self):
+        app = self.cleaned_data.get('app')
+        allow_apps = [v[1] for i,v in enumerate(getCurrentApps()) if v[1] !='-- Select app --']
+        if app not in allow_apps:
+            raise ValidationError(
+                message=_("The app selected is not located physically in your project or doesn't exist"),
+                code='app_not_found'
+            )
+        return app
+    
+    def clean_model(self):
+        model = self.cleaned_data.get('model')
+        app = self.cleaned_data.get('app')
+        if not app:
+            raise ValidationError(
+                message=_("You must to select an app first"),
+                code='app_required'
+            )
+        else:
+            app_obj = apps.get_app_config(app)
+            models_related = [model.__name__ for model in app_obj.get_models()]
+            if model not in models_related:
+                raise ValidationError(
+                    message=_("The model is not related to the app selected"),
+                    code='model_not_related'
+                )
+            if Configuration.objects.filter(app=app,model=model).exists():
+                raise ValidationError(
+                    message=_("This model already have a XLSX configuration"),
+                    code='config_exist'
+                )
+        return model
 
 class ProductForm(forms.ModelForm):
     class Meta:
@@ -26,7 +79,7 @@ class ProductFilterForm(forms.Form):
             'placeholder':'Code'
         }),
         validators=[
-            RegexValidator(regex='^[a-zA-Z0-9   -]+$',message='This field contains invalid characters.')
+            RegexValidator(regex='^[a-zA-Z0-9 -]+$',message='This field contains invalid characters.')
         ]
     )
     
@@ -159,18 +212,43 @@ class SupplierFilterForm(forms.Form):
         ]
     )
     
-class xlsx_initConfigForm(forms.Form):
-    app = forms.ChoiceField(
-        label='App',
-        help_text='Apps located physically in your project',
-        choices=getCurrentApps,
+class ConfigurationFilterForm(forms.Form):
+    app = forms.CharField(
+        help_text='filter_option',
+        required=False,
+        max_length=255, 
+        strip=True,
+        widget=forms.TextInput(attrs={
+            'placeholder':'App'
+        }),
         validators=[
-            RegexValidator(regex='^[a-zA-Z0-9_]+$',message='This field contains invalid characters.')
+            RegexValidator(regex='^[a-zA-Z]+$',message='This field contains invalid characters.')
         ]
     )
     
-    model = forms.ChoiceField(
-        label='Model',
-        help_text='Models related to the app selected',
-        choices=[('','Select an app first')]
+    model = forms.CharField(
+        help_text='filter_option',
+        required=False,
+        max_length=255, 
+        strip=True,
+        widget=forms.TextInput(attrs={
+            'placeholder':'Model'
+        }),
+        validators=[
+            RegexValidator(regex='^[a-zA-Z]+$',message='This field contains invalid characters.')
+        ]
+    )
+    
+    status = forms.ChoiceField(
+        help_text='filter_option',
+        required=False,
+        choices=Status.choices,
+        widget = forms.Select(
+            attrs={
+                'class':'form-control'
+            }
+        ),
+         validators=[
+            RegexValidator(regex='^[0-9]+$',message='This field contains unvalid characters.')
+        ]
     )
