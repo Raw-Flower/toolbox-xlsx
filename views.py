@@ -1,22 +1,59 @@
 from django.urls import reverse_lazy
-from django.http import HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404
-from django.views.generic import CreateView, ListView, UpdateView, TemplateView, FormView
+from django.http import JsonResponse
+from django.views.generic import CreateView, ListView, UpdateView, TemplateView
 from django.contrib import messages
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Q
-from .models import Product, Category, Supplier
-from .forms import ProductForm, ProductFilterForm, CategoryForm, CategoryFilterForm, SupplierForm, SupplierFilterForm, xlsx_initConfigForm
+from .models import Product, Category, Supplier, Configuration
+from .forms import ProductForm, ProductFilterForm, CategoryForm, CategoryFilterForm, SupplierForm, SupplierFilterForm, ConfigurationForm, ConfigurationFilterForm
 from core.utils import get_query_conditions
 from .utils import getModelsByApp
 
 # BASIC
 class IndexView(TemplateView):
     template_name = 'xlsx/basic/index.html'
+
+# CORE
+class ConfigAdd(CreateView):
+    model = Configuration
+    form_class = ConfigurationForm
+    template_name = 'xlsx/core/config_add.html'
+    success_url = reverse_lazy('xlsx:config_grid')
     
-class StartConfig(FormView):
-    form_class = xlsx_initConfigForm
-    template_name = 'xlsx/configuration/main_config.html'
+    def form_valid(self, form):
+        messages.success(request=self.request,message=_('Your configuration has been created successfully.'))
+        return super().form_valid(form)
+    
+    def form_invalid(self, form):
+        messages.error(request=self.request,message=_('Your data has some errors, please check and try again.'))
+        return super().form_invalid(form)
+    
+class ConfigGrid(ListView):
+    model = Configuration
+    template_name = 'xlsx/core/config_grid.html'
+    context_object_name = 'config_records'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['filter_form'] = ConfigurationFilterForm(self.request.GET)
+        return context
+    
+    def get_queryset(self):
+        queryset = Configuration.objects.filter(status=1)
+        if self.request.GET:
+            filter_form = ConfigurationFilterForm(self.request.GET)
+            if filter_form.is_valid():
+                filters_dict = {
+                    'app':'icontains',
+                    'model':'icontains',
+                    'status':'exact'
+                }
+                query_filters = get_query_conditions(filter_form.cleaned_data,filters_dict)
+                queryset = Configuration.objects.filter(query_filters)
+                return queryset
+            else:
+                messages.error(request=self.request,message='Your filters present some issues, please check and try again.')
+        return queryset
     
 # FUNCTIONS
 def get_models(request,app_name):

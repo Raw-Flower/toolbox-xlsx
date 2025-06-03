@@ -1,0 +1,37 @@
+{% extends 'xlsx/base/base.html' %}
+{% load static %}
+{% block subtitle %}XLSX Configure{% endblock subtitle %}
+{% block content %}
+{% include 'core/includes/messages.html' %}
+    <div class="card">
+        <div class="card-body">
+            {% if form %}
+                <form novalidate method='POST'>
+                    {% include 'core/includes/form_render.html' with form=form title='XLSX Configuration' only  %}
+                    <div class='mt-2'>
+                        {% csrf_token %}
+                        <button type='submit' class='btn btn-primary'>Submit <i class="bi bi-rocket-takeoff"></i></button>
+                    </div>
+
+                    <hr>
+                    <div class="alert alert-info" role="alert">
+                        <h4 class="alert-heading">Attention <i class="bi bi-info-circle"></i></h4>
+                        <p>Here you will add the XLSX configuration each model located inside specific app, after choose the app, the XLSX default configuration will added based on the following rules:</p>
+                        <ul>
+                            <li>System will get all the fields from the model(Alphabetical order).</li>
+                            <li>Each model field will be located in (A-Z) column.</li>
+                            <li>XLSX Template will created automatic(Only for import).</li>
+                            <li>You can modify the columns order as you need.</li>
+                            <li>You can not have more than one XLSX configuration from the same <span class='fw-bold'>app.model</span></li>
+                        </ul> 
+                      </div>
+                </form>
+                {% else %}
+                <div class='mt-2'>
+                    <h3>No form provide</h3>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    <script src="{% static 'js/get_options.js' %}"></script>
+{% endblock content %}

@@ -5,7 +5,8 @@ app_name = 'xlsx'
 urlpatterns = [
     #BASIC
     path(route='index/',view=IndexView.as_view(),name='index'),
-    path(route='config/',view=StartConfig.as_view(),name='config'),
+    path(route='new-config/',view=ConfigAdd.as_view(),name='config_add'),
+    path(route='config-grid/',view=ConfigGrid.as_view(),name='config_grid'),
     path(route='get-models/<str:app_name>', view=get_models),
     
     #PRODUCT

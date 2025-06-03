@@ -1,3 +1,14 @@
+document.addEventListener('DOMContentLoaded', function () {
+    const app_field = document.getElementById('id_app')
+    const model_field = document.getElementById('id_model')
+    if (app_field.value != '') {
+        getModels(app_field.value)
+    } else {
+        model_field.innerHTML = ''
+        model_field.innerHTML += '<option value selected>Select an app first</option><option'
+    }
+})
+
 const app_field = document.getElementById('id_app')
 app_field.addEventListener('change', function () {
     getModels(app_field.value)
