@@ -1,11 +1,12 @@
 from django.urls import reverse_lazy
 from django.http import JsonResponse
-from django.views.generic import CreateView, ListView, UpdateView, TemplateView
+from django.shortcuts import get_object_or_404
+from django.views.generic import CreateView, ListView, UpdateView, TemplateView, DeleteView
 from django.contrib import messages
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Q
-from .models import Product, Category, Supplier, Configuration
-from .forms import ProductForm, ProductFilterForm, CategoryForm, CategoryFilterForm, SupplierForm, SupplierFilterForm, ConfigurationForm, ConfigurationFilterForm
+from .models import Product, Category, Supplier, Configuration, Template, TemplateType
+from .forms import ProductForm, ProductFilterForm, CategoryForm, CategoryFilterForm, SupplierForm, SupplierFilterForm, ConfigurationForm, ConfigurationFilterForm, TemplateForm
 from core.utils import get_query_conditions
 from .utils import getModelsByApp
 
@@ -54,6 +55,66 @@ class ConfigGrid(ListView):
             else:
                 messages.error(request=self.request,message='Your filters present some issues, please check and try again.')
         return queryset
+    
+class TemplateGrid(ListView):
+    model = Template
+    template_name = 'xlsx/core/template_grid.html'
+    context_object_name = 'export_config'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['config'] = get_object_or_404(Configuration,id=self.kwargs['config_id'])
+        return context
+    
+    def get_queryset(self):
+        template_type = 1 if self.request.GET.get('type','export')=='export' else 2
+        queryset = Template.objects.filter(configuration=self.kwargs['config_id'],type=template_type)
+        return queryset.order_by('column')
+    
+class TemplateUpdateView(UpdateView):
+    model = Template
+    template_name = 'xlsx/core/template_update.html'
+    form_class = TemplateForm
+    
+    def get_success_url(self):
+        type = 'export' if self.get_object().type == 1 else 'import'
+        return reverse_lazy(
+            viewname = 'xlsx:template_grid', 
+            kwargs={
+                'config_id':self.get_object().configuration.id
+            },
+            query={
+                'type':type
+            }
+        )
+    
+    def form_valid(self, form):
+        messages.success(request=self.request,message=_('Template configuration has been updated correctly.'))
+        return super().form_valid(form)
+    
+    def form_invalid(self, form):
+        messages.error(request=self.request,message=_('You data have some issues, please check and try again.'))
+        return super().form_invalid(form)
+    
+class TemplateDeleteView(DeleteView):
+    model = Template
+    template_name = 'xlsx/core/template_delete.html'
+    
+    def get_success_url(self):
+        type = 'export' if self.get_object().type == 1 else 'import'
+        return reverse_lazy(
+            viewname = 'xlsx:template_grid', 
+            kwargs={
+                'config_id':self.get_object().configuration.id
+            },
+            query={
+                'type':type
+            }
+        )
+        
+    def form_valid(self, form):
+        messages.success(request=self.request,message=_('Template column has been deleted correctly.'))
+        return super().form_valid(form)
     
 # FUNCTIONS
 def get_models(request,app_name):

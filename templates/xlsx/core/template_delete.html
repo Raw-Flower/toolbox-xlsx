@@ -1,0 +1,26 @@
+{% extends 'xlsx/base/base.html' %}
+{% block subtitle %}Template delete{% endblock subtitle %}
+{% block content %}
+    <div class='row'>
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="alert alert-warning" role="alert">
+                        <h4 class="alert-heading"> <i class="bi bi-exclamation-triangle"></i> <strong>Stop right there!</strong>  </h4>
+                        <p>The following column <strong>{{object.label}}</strong> will remove from DB and is not going to be accessible again.</p>
+                        <hr>
+                        <p class="mb-0">Are you sure to continue?</p>
+                        <div class='mt-2'>
+                            <form method='post'>
+                                {% csrf_token %}
+                                <button class='btn btn-danger' type='submit'> <i class="bi bi-trash"></i> Yes, delete</button>
+                            </form>
+                        </div>
+                    </div>
+                    <hr>
+                    <a href='{% url "xlsx:template_grid" config_id=object.configuration.id %}?type={{object.get_type_display|lower}}'>Return to template grid</a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

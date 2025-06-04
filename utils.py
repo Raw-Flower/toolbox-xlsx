@@ -26,7 +26,10 @@ def getModelsByApp(app):
         models_choices.append((model.__name__,model._meta.verbose_name))
     return models_choices
 
+def getColumn(pos=0):
+    columns = ['A','B','C','D','E','F','G','H','I','J','K','M','N','L','O','P','Q','R','S','T','U','V','W','X','Y','Z']
+    return columns[pos]
 
-
-        
-        
+def getColumnsChoices():
+    columns = ['A','B','C','D','E','F','G','H','I','J','K','M','N','L','O','P','Q','R','S','T','U','V','W','X','Y','Z']
+    return [(i,i) for i in columns]

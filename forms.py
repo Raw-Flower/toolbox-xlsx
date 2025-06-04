@@ -3,8 +3,8 @@ from django.core.validators import RegexValidator
 from django.apps import apps
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
-from .models import Product, Category, Supplier, Status, Configuration
-from .utils import getCurrentApps, getCurrentModels
+from .models import Product, Category, Supplier, Status, Configuration, Template
+from .utils import getCurrentApps, getCurrentModels, getColumnsChoices
 
 class ConfigurationForm(forms.ModelForm):
     app = forms.ChoiceField(
@@ -55,6 +55,46 @@ class ConfigurationForm(forms.ModelForm):
                     code='config_exist'
                 )
         return model
+    
+    
+class TemplateForm(forms.ModelForm):
+    column = forms.ChoiceField(
+        label='Column',
+        help_text='Column on XLSX file',
+        choices=getColumnsChoices
+    )
+    
+    value = forms.ChoiceField(
+        label='Value',
+        help_text='Fields from model'
+    )
+    
+    class Meta:
+        model = Template 
+        fields = ['label','column','value']
+        help_texts = {
+            'label':'Column label located in XLSX file'
+        }
+      
+    def __init__(self,*args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Check if instance exist
+        if self.instance:
+            app2get = self.instance.configuration.app # Get the app
+            model2get = self.instance.configuration.model # Get the model
+            model = apps.get_model(app2get,model2get) # Get the model instance
+            field_choices = [(field.name,field.name) for field in model._meta.fields] #Create choices list
+            self.fields['value'].choices = field_choices #Assing choices to the field
+            
+    def clean_column(self):
+        column2check = self.cleaned_data.get('column')
+        if Template.objects.filter(column=column2check,type=self.instance.type).exclude(pk=self.instance.id).exists():
+            raise ValidationError(
+                message=_('Column already configure'),
+                code='column_occupied'
+            )
+        return column2check
 
 class ProductForm(forms.ModelForm):
     class Meta:
