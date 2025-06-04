@@ -7,6 +7,11 @@ class Status(models.IntegerChoices):
     enable = (1,'Active')
     disable = (0,'Inactive')
     __empty__ = ('-- Status --')
+
+class TemplateType(models.IntegerChoices):
+    type_export = (1,'Export')
+    type_import = (2,'Import')
+    __empty__ = ('-- Type --')
     
 class Configuration(models.Model):
     app = models.CharField(
@@ -46,14 +51,65 @@ class Configuration(models.Model):
         return f'{self.app}.{self.model}'
     
 class Template(models.Model):
-    '''
-    config FK
-    type Select(export/import)
-    column
-    value
-    template_file
-    '''
-    pass
+    configuration = models.ForeignKey(to=Configuration, verbose_name=_("Configuration"), on_delete=models.CASCADE)
+    type = models.IntegerField(verbose_name=_("Type"),choices=TemplateType.choices)
+    
+    label = models.CharField(
+        verbose_name=_("Label"), 
+        max_length=255,
+        validators=[
+            RegexValidator(
+                regex='^[a-zA-Z _\-\[\]\(\)\{\}]+$',
+                message=_('This field contains invalid characters.'),
+                code='invalid_characters'
+            )
+        ]
+    )
+    
+    column = models.CharField(
+        verbose_name=_("Column"), 
+        max_length=255,
+        validators=[
+            RegexValidator(
+                regex='^[a-zA-Z]+$',
+                message=_('This field contains invalid characters.'),
+                code='invalid_characters'
+            )
+        ]
+    )
+    
+    value = models.CharField(
+        verbose_name=_(""), 
+        max_length=255,
+        validators=[
+            RegexValidator(
+                regex='^[a-zA-Z_]+$',
+                message=_('This field contains invalid characters.'),
+                code='invalid_characters'
+            )
+        ]
+    )
+    
+    template_file = models.FileField(
+        verbose_name=_("Template"), 
+        blank=True,
+        upload_to=None,
+        max_length=100,
+        validators=[
+            
+        ]
+    )
+    status = models.IntegerField(_("Status"), choices=Status, default=Status.enable)
+    createtime = models.DateTimeField(auto_now_add=True)
+    updatetime = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = 'Template'
+        verbose_name_plural = 'Templates'
+        ordering = ['id']
+        
+    def __str__(self):
+        return f'{self.id}'
         
 class Category(models.Model):
     name = models.CharField(
