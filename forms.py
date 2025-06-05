@@ -76,25 +76,43 @@ class TemplateForm(forms.ModelForm):
             'label':'Column label located in XLSX file'
         }
       
-    def __init__(self,*args, **kwargs):
+    # Init method with custom parameter
+    def __init__(self,*args, config_id=None, file_type=None, **kwargs): #Send custom parameter to form
+        self.file_type = 1 if file_type == 'export' else 2
         super().__init__(*args, **kwargs)
         
-        # Check if instance exist
-        if self.instance:
-            app2get = self.instance.configuration.app # Get the app
-            model2get = self.instance.configuration.model # Get the model
-            model = apps.get_model(app2get,model2get) # Get the model instance
+        if config_id: # Check if the custom parameter has form
+            instance = Configuration.objects.get(id=config_id)
+            model = apps.get_model(instance.app,instance.model) # Get the model instance
             field_choices = [(field.name,field.name) for field in model._meta.fields] #Create choices list
+            field_choices.insert(0,('','--Select field--')) #Default choice
             self.fields['value'].choices = field_choices #Assing choices to the field
             
     def clean_column(self):
         column2check = self.cleaned_data.get('column')
-        if Template.objects.filter(column=column2check,type=self.instance.type).exclude(pk=self.instance.id).exists():
+        type2filter = self.file_type if not self.instance.id else self.instance.type
+        queryset = Template.objects.filter(column=column2check,type=type2filter)
+        if self.instance.id:
+            queryset = queryset.exclude(id=self.instance.id)
+        if queryset.exists():
             raise ValidationError(
-                message=_('Column already configure'),
+                message=_('Selected column is already occupied.'),
                 code='column_occupied'
             )
         return column2check
+    
+    def clean_value(self):
+        value2check = self.cleaned_data.get('value')
+        type2filter = self.file_type if not self.instance.id else self.instance.type
+        queryset = Template.objects.filter(value=value2check,type=type2filter)
+        if self.instance.id:
+            queryset = queryset.exclude(id=self.instance.id)
+        if queryset.exists():
+            raise ValidationError(
+                message=_('Model field selected is already configure on the XLSX file.'),
+                code='value_occupied'
+            )
+        return value2check
 
 class ProductForm(forms.ModelForm):
     class Meta:

@@ -1,14 +1,15 @@
 from django.urls import reverse_lazy
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import CreateView, ListView, UpdateView, TemplateView, DeleteView
 from django.contrib import messages
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Q
-from .models import Product, Category, Supplier, Configuration, Template, TemplateType
+from .models import Product, Category, Supplier, Configuration, Template
 from .forms import ProductForm, ProductFilterForm, CategoryForm, CategoryFilterForm, SupplierForm, SupplierFilterForm, ConfigurationForm, ConfigurationFilterForm, TemplateForm
 from core.utils import get_query_conditions
 from .utils import getModelsByApp
+from .mixins import CheckTypeParameter
 
 # BASIC
 class IndexView(TemplateView):
@@ -56,7 +57,7 @@ class ConfigGrid(ListView):
                 messages.error(request=self.request,message='Your filters present some issues, please check and try again.')
         return queryset
     
-class TemplateGrid(ListView):
+class TemplateGrid(CheckTypeParameter, ListView):
     model = Template
     template_name = 'xlsx/core/template_grid.html'
     context_object_name = 'export_config'
@@ -71,20 +72,65 @@ class TemplateGrid(ListView):
         queryset = Template.objects.filter(configuration=self.kwargs['config_id'],type=template_type)
         return queryset.order_by('column')
     
+class TemplateCreateView(CheckTypeParameter, CreateView):
+    model = Template
+    template_name = 'xlsx/core/template_create.html'
+    form_class = TemplateForm
+    
+    def get_success_url(self):
+        return reverse_lazy(
+            'xlsx:template_grid', 
+            kwargs={
+                'config_id':self.kwargs['config_id']
+            },
+            query={
+                'type':self.request.GET['type']
+            }
+        )
+    
+    def get_form_kwargs(self):
+        form_kwargs = super().get_form_kwargs()
+        form_kwargs['config_id'] = self.kwargs['config_id']
+        form_kwargs['file_type'] = self.request.GET['type']
+        return form_kwargs
+    
+    def post(self, request, *args, **kwargs):
+        type = self.request.GET['type']
+        allow_values = ['export','import']
+        if type not in allow_values:
+            messages.error(request=self.request,message=_('Type parameter is missing or incorrect, please check and try again.'))
+            return redirect('xlsx:config_grid')
+        return super().post(request, *args, **kwargs)
+    
+    def form_valid(self, form):
+        self.object = form.save(commit=False)
+        self.object.configuration = Configuration.objects.get(id=self.kwargs['config_id'])
+        self.object.type = 1 if self.request.GET['type']=='export' else 2
+        messages.success(request=self.request,message=_('Template configuration has been created correctly.'))
+        return super().form_valid(form)
+    
+    def form_invalid(self, form):
+        messages.error(request=self.request,message=_('You data have some issues, please check and try again.'))
+        return super().form_invalid(form)
+    
 class TemplateUpdateView(UpdateView):
     model = Template
     template_name = 'xlsx/core/template_update.html'
     form_class = TemplateForm
     
+    def get_form_kwargs(self):
+        form_kwargs = super().get_form_kwargs()
+        form_kwargs['config_id'] = self.kwargs['config_id']
+        return form_kwargs
+    
     def get_success_url(self):
-        type = 'export' if self.get_object().type == 1 else 'import'
         return reverse_lazy(
             viewname = 'xlsx:template_grid', 
             kwargs={
                 'config_id':self.get_object().configuration.id
             },
             query={
-                'type':type
+                'type':self.request.GET['type']
             }
         )
     
@@ -101,14 +147,13 @@ class TemplateDeleteView(DeleteView):
     template_name = 'xlsx/core/template_delete.html'
     
     def get_success_url(self):
-        type = 'export' if self.get_object().type == 1 else 'import'
         return reverse_lazy(
             viewname = 'xlsx:template_grid', 
             kwargs={
                 'config_id':self.get_object().configuration.id
             },
             query={
-                'type':type
+                'type':self.request.GET['type']
             }
         )
         

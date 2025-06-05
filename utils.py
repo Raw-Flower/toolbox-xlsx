@@ -32,4 +32,6 @@ def getColumn(pos=0):
 
 def getColumnsChoices():
     columns = ['A','B','C','D','E','F','G','H','I','J','K','M','N','L','O','P','Q','R','S','T','U','V','W','X','Y','Z']
-    return [(i,i) for i in columns]
+    columnsChoices = [(i,i) for i in columns]
+    columnsChoices.insert(0,('','--Select column--'))
+    return columnsChoices
