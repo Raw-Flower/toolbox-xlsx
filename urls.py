@@ -12,6 +12,7 @@ urlpatterns = [
     path(route='template/<int:config_id>/update/<int:pk>',view=TemplateUpdateView.as_view(),name='template_update'),
     path(route='template/<int:config_id>/delete/<int:pk>',view=TemplateDeleteView.as_view(),name='template_delete'),
     path(route='get-models/<str:app_name>', view=get_models),
+    path(route='get-xlsx-file/', view=generate_xlsx_file),
     
     #PRODUCT
     path(route='product/grid',view=ProductListView.as_view(),name='product_grid'),

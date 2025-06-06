@@ -5,11 +5,13 @@ from django.views.generic import CreateView, ListView, UpdateView, TemplateView,
 from django.contrib import messages
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Q
+from django.apps import apps
 from .models import Product, Category, Supplier, Configuration, Template
 from .forms import ProductForm, ProductFilterForm, CategoryForm, CategoryFilterForm, SupplierForm, SupplierFilterForm, ConfigurationForm, ConfigurationFilterForm, TemplateForm
 from core.utils import get_query_conditions
 from .utils import getModelsByApp
 from .mixins import CheckTypeParameter
+from .custom_exceptions import ParametersNotFound
 
 # BASIC
 class IndexView(TemplateView):
@@ -167,6 +169,57 @@ def get_models(request,app_name):
     return JsonResponse(
         data={
             'models':models
+        }
+    )
+    
+def generate_xlsx_file(request):
+    if request.method == 'POST':
+        try:
+            #Check parameters exist
+            if not request.POST.get('app') or not request.POST.get('model') or not request.POST.get('template_type'):
+                raise ParametersNotFound
+            
+            #Get configuration ID
+            config_instance = Configuration.objects.get(app=request.POST.get('app',None),model=request.POST.get('model',None))
+            model = apps.get_model(app_label=request.POST.get('app'), model_name=request.POST.get('model'))
+        except ParametersNotFound:
+            return JsonResponse(
+                data={
+                    'result':False,
+                    'error_message':'Missing app/model/template_type parameters.'
+                }
+            )
+        except LookupError:
+            return JsonResponse(
+                data={
+                    'result':False,
+                    'error_message':'App or model not found.'
+                }
+            )
+        except Exception as e:
+            return JsonResponse(
+                data={
+                    'result':False,
+                    'error_message':f'ERROR({type(e).__name__}): Please contact system administrator.'
+                }
+            )
+        else:
+            print('Continue normally...')
+            print(request.POST)
+            template_config = Template.objects.filter(configuration=config_instance.id,type=request.POST.get('template_type'))
+            
+            #Get parameters input by user
+            queryparams = {}
+            for field in template_config:
+                if field.value in request.POST and request.POST.get(field.value):
+                    queryparams[field.value] = request.POST.get(field.value)
+            
+            queryset = model.objects.filter(**queryparams)
+            print(queryset)
+            
+    return JsonResponse(
+        data={
+            'result':True
         }
     )
     
