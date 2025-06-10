@@ -10,7 +10,7 @@
                     <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#filterBox"><i class="bi bi-funnel"></i></button>
                     <a href='{% url "xlsx:product_add" %}' class='btn btn-success'><i class="bi bi-plus-circle"></i> Add new product</a>
                     {% csrf_token %}
-                    <button class='btn btn-warning' onclick='generateExportFile()'><i class="bi bi-file-earmark-arrow-down"></i> Export</button>
+                    <button class='btn btn-warning' onclick='generateExportFile(this)'><i class="bi bi-file-earmark-arrow-down"></i><span id='export_btn_label'>Export</span></button>
                 </p>
                 <div class="collapse" id="filterBox">
                     <div class="card card-body">
@@ -69,7 +69,12 @@
         </div>
     </div>
     <script>
-        function generateExportFile(){
+        function generateExportFile(button){
+            const btn_label = document.getElementById('export_btn_label')
+
+            button.disabled = true;
+            btn_label.innerHTML = 'Processing...'
+
             const queryString = window.location.search;
             const urlParams = new URLSearchParams(queryString);
             const params2send = new FormData()
@@ -90,17 +95,27 @@
             })
             .then(response => response.json())
             .then(data => {
+                button.disabled = false;
+                btn_label.innerText = 'Export'
                 if(data.result){
                     console.log('Good for now')
                 }else{
-                    alert(data.error_message)
+                    if (data.form_errors){
+                        let message = 'Your request has been failed, please review the following errors: \n'
+                        for(const error of data.form_errors){
+                            message+=`* ${error}\n` 
+                        }
+                        alert(message)
+                    }else{
+                        alert('Export error, please contact system administrator.')
+                    }
                 }
             })
             .catch(error => {
+                button.disabled = false;
+                btn_label.innerText = 'Export'
                 console.error('Error fetching data:', error)
             });
-
-
 
         }
 

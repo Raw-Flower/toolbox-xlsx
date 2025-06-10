@@ -1,5 +1,6 @@
 from django.apps import apps
 from django.conf import settings
+import time
 
 def getCurrentApps():
     current_apps = apps.get_app_configs()
@@ -35,3 +36,10 @@ def getColumnsChoices():
     columnsChoices = [(i,i) for i in columns]
     columnsChoices.insert(0,('','--Select column--'))
     return columnsChoices
+
+def testing(param):
+    print(param)
+    print('Async func begin...')
+    time.sleep(10)
+    print('Async finish...')
+    return True
