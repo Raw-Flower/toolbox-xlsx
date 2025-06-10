@@ -113,6 +113,51 @@ class TemplateForm(forms.ModelForm):
                 code='value_occupied'
             )
         return value2check
+    
+class ExportParamsForm(forms.Form):
+    app = forms.CharField(
+        label='app', 
+        max_length=255,
+        validators=[
+            RegexValidator(
+                regex='^[a-z][a-z0-9_]*$',
+                message='App name provide is invalid',
+                code='invalid_app'
+            )
+        ]
+    )
+    
+    model = forms.CharField(
+        label='model', 
+        max_length=255,
+        validators=[
+            RegexValidator(
+                regex='^[A-Z][a-zA-Z0-9]*$',
+                message='Model name provide is invalid',
+                code='invalid_model'
+            )
+        ]
+    )
+    
+    template_type = forms.ChoiceField(
+        label='template_type', 
+        choices=[
+            ('1','export'),
+            ('2','import')
+        ], 
+    )
+            
+    def clean_model(self):
+        try:
+            model = apps.get_model(app_label=self.cleaned_data['app'], model_name=self.cleaned_data['model'])
+            print(model)
+        except LookupError:
+            raise ValidationError(
+                message='The app or model provide are not valid',
+                code='model_not_found'
+        )
+        else:
+            return self.cleaned_data['model']
 
 class ProductForm(forms.ModelForm):
     class Meta:

@@ -7,11 +7,12 @@ from django.utils.translation import gettext_lazy as _
 from django.db.models import Q
 from django.apps import apps
 from .models import Product, Category, Supplier, Configuration, Template
-from .forms import ProductForm, ProductFilterForm, CategoryForm, CategoryFilterForm, SupplierForm, SupplierFilterForm, ConfigurationForm, ConfigurationFilterForm, TemplateForm
+from .forms import ProductForm, ProductFilterForm, CategoryForm, CategoryFilterForm, SupplierForm, SupplierFilterForm, ConfigurationForm, ConfigurationFilterForm, TemplateForm, ExportParamsForm
 from core.utils import get_query_conditions
-from .utils import getModelsByApp
+from .utils import getModelsByApp, testing
 from .mixins import CheckTypeParameter
-from .custom_exceptions import ParametersNotFound
+from asgiref.sync import async_to_sync, sync_to_async
+import asyncio
 
 # BASIC
 class IndexView(TemplateView):
@@ -126,13 +127,14 @@ class TemplateUpdateView(UpdateView):
         return form_kwargs
     
     def get_success_url(self):
+        template_type = 'export' if self.get_object().type == 1 else 'import'
         return reverse_lazy(
             viewname = 'xlsx:template_grid', 
             kwargs={
                 'config_id':self.get_object().configuration.id
             },
             query={
-                'type':self.request.GET['type']
+                'type':template_type
             }
         )
     
@@ -149,13 +151,14 @@ class TemplateDeleteView(DeleteView):
     template_name = 'xlsx/core/template_delete.html'
     
     def get_success_url(self):
+        template_type = 'export' if self.get_object().type == 1 else 'import'
         return reverse_lazy(
             viewname = 'xlsx:template_grid', 
             kwargs={
                 'config_id':self.get_object().configuration.id
             },
             query={
-                'type':self.request.GET['type']
+                'type':template_type
             }
         )
         
@@ -172,57 +175,73 @@ def get_models(request,app_name):
         }
     )
     
-def generate_xlsx_file(request):
-    if request.method == 'POST':
-        try:
-            #Check parameters exist
-            if not request.POST.get('app') or not request.POST.get('model') or not request.POST.get('template_type'):
-                raise ParametersNotFound
-            
-            #Get configuration ID
-            config_instance = Configuration.objects.get(app=request.POST.get('app',None),model=request.POST.get('model',None))
-            model = apps.get_model(app_label=request.POST.get('app'), model_name=request.POST.get('model'))
-        except ParametersNotFound:
-            return JsonResponse(
-                data={
-                    'result':False,
-                    'error_message':'Missing app/model/template_type parameters.'
-                }
-            )
-        except LookupError:
-            return JsonResponse(
-                data={
-                    'result':False,
-                    'error_message':'App or model not found.'
-                }
-            )
-        except Exception as e:
-            return JsonResponse(
-                data={
-                    'result':False,
-                    'error_message':f'ERROR({type(e).__name__}): Please contact system administrator.'
-                }
-            )
-        else:
-            print('Continue normally...')
-            print(request.POST)
-            template_config = Template.objects.filter(configuration=config_instance.id,type=request.POST.get('template_type'))
-            
-            #Get parameters input by user
-            queryparams = {}
-            for field in template_config:
-                if field.value in request.POST and request.POST.get(field.value):
-                    queryparams[field.value] = request.POST.get(field.value)
-            
-            queryset = model.objects.filter(**queryparams)
-            print(queryset)
-            
+async def async_testing(request):
+    print('llamado...')
+    result = await sync_to_async(testing,thread_sensitive=True)('my_parameter')
+    if result:
+        print('ejecutado correcto...')
+        
     return JsonResponse(
         data={
             'result':True
         }
     )
     
+def generate_xlsx_file(request):
+    print('generando file...')
+    if request.method == 'POST':
+        print(request.POST)
+        form = ExportParamsForm(request.POST)
+        if form.is_valid():
+            print('Todo correcto...')
+            #Get template configuration
+            config_instance = Configuration.objects.get(app=form.cleaned_data.get('app'),model=form.cleaned_data.get('model')) # Get config instance
+            template_config = Template.objects.filter(configuration=config_instance.id,type=form.cleaned_data.get('template_type')) # Get template config for export
+            model = apps.get_model(app_label=form.cleaned_data.get('app'), model_name=form.cleaned_data.get('model')) # Get model for query
+            
+            #Prepare parameters for get same result as user
+            queryparams = {}
+            for field in template_config: # Loop template fields
+                if field.value in request.POST and request.POST.get(field.value): # If template field found on user request, added to query params 
+                    queryparams[field.value] = request.POST.get(field.value)# Query params same as the user
+            queryset = model.objects.filter(**queryparams)# Filter the model loaded and apply the same filters as the user
+            print(queryset)
+            
+            result = sync_to_async(testing,thread_sensitive=True)('my_parameter')
+            asyncio.run(result)
+            if result:
+                print('Llamado asincronico correcto...')
+                
+                
+            
+            #Create xlsx file
+                #create dataframe using pandas
+                #Transfer this dataframe to real xlsx file
+                #Save this file as a log
+                #Return log ID
+            return JsonResponse(
+                data={
+                    'result':True
+                }
+            )
+        else:
+            errors_list = []
+            for field,errors in form.errors.items(): 
+                for error in errors:
+                    errors_list.append(error)
+            return JsonResponse(
+                data={
+                    'result':False,
+                    'form_errors':errors_list
+                }
+            )
+    return JsonResponse(
+        data={
+            'result':False,
+            'error':'Only post request are allow.'
+        }
+    )
+
 # PRODUCT
 class ProductListView(ListView):
     model = Product
