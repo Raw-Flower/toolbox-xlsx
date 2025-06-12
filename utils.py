@@ -1,6 +1,10 @@
 from django.apps import apps
 from django.conf import settings
 import time
+from openpyxl import Workbook
+from .models import Template
+import pandas as pd
+from io import BytesIO
 
 def getCurrentApps():
     current_apps = apps.get_app_configs()
@@ -37,9 +41,26 @@ def getColumnsChoices():
     columnsChoices.insert(0,('','--Select column--'))
     return columnsChoices
 
-def testing(param):
-    print(param)
-    print('Async func begin...')
-    time.sleep(10)
-    print('Async finish...')
+def sync_def():
+    print('Running...')
+    time.sleep(2)
+    print('Ending...')
     return True
+
+def prepare_xlsx_export(queryset,template_config,config_id):
+    workbook = Workbook() # Create file
+    current_sheet = workbook.active # Select sheet    
+    
+    # Headers
+    headers = [template.label for template in template_config]
+    current_sheet.append(headers)
+    
+    # Rows
+    for record in queryset:
+        row = [str(getattr(record,template.value,'')) for template in template_config]
+        current_sheet.append(row)
+            
+    output = BytesIO()
+    workbook.save(output)
+    output.seek(0)
+    return output

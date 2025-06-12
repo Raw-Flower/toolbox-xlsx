@@ -1,5 +1,5 @@
 from django.urls import reverse_lazy
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import CreateView, ListView, UpdateView, TemplateView, DeleteView
 from django.contrib import messages
@@ -9,9 +9,9 @@ from django.apps import apps
 from .models import Product, Category, Supplier, Configuration, Template
 from .forms import ProductForm, ProductFilterForm, CategoryForm, CategoryFilterForm, SupplierForm, SupplierFilterForm, ConfigurationForm, ConfigurationFilterForm, TemplateForm, ExportParamsForm
 from core.utils import get_query_conditions
-from .utils import getModelsByApp, testing
+from .utils import getModelsByApp, prepare_xlsx_export, sync_def
 from .mixins import CheckTypeParameter
-from asgiref.sync import async_to_sync, sync_to_async
+from asgiref.sync import sync_to_async
 import asyncio
 
 # BASIC
@@ -176,8 +176,7 @@ def get_models(request,app_name):
     )
     
 async def async_testing(request):
-    print('llamado...')
-    result = await sync_to_async(testing,thread_sensitive=True)('my_parameter')
+    result = await sync_to_async(sync_def,thread_sensitive=True)('my_parameter')
     if result:
         print('ejecutado correcto...')
         
@@ -190,13 +189,11 @@ async def async_testing(request):
 def generate_xlsx_file(request):
     print('generando file...')
     if request.method == 'POST':
-        print(request.POST)
         form = ExportParamsForm(request.POST)
         if form.is_valid():
-            print('Todo correcto...')
             #Get template configuration
             config_instance = Configuration.objects.get(app=form.cleaned_data.get('app'),model=form.cleaned_data.get('model')) # Get config instance
-            template_config = Template.objects.filter(configuration=config_instance.id,type=form.cleaned_data.get('template_type')) # Get template config for export
+            template_config = Template.objects.filter(configuration=config_instance.id,type=form.cleaned_data.get('template_type')).order_by('column') # Get template config for export
             model = apps.get_model(app_label=form.cleaned_data.get('app'), model_name=form.cleaned_data.get('model')) # Get model for query
             
             #Prepare parameters for get same result as user
@@ -205,25 +202,23 @@ def generate_xlsx_file(request):
                 if field.value in request.POST and request.POST.get(field.value): # If template field found on user request, added to query params 
                     queryparams[field.value] = request.POST.get(field.value)# Query params same as the user
             queryset = model.objects.filter(**queryparams)# Filter the model loaded and apply the same filters as the user
-            print(queryset)
             
-            result = sync_to_async(testing,thread_sensitive=True)('my_parameter')
-            asyncio.run(result)
-            if result:
-                print('Llamado asincronico correcto...')
-                
-                
+            result = asyncio.run(sync_to_async(prepare_xlsx_export)(queryset,template_config,config_instance.id))
+            print(result)
             
             #Create xlsx file
                 #create dataframe using pandas
                 #Transfer this dataframe to real xlsx file
                 #Save this file as a log
                 #Return log ID
-            return JsonResponse(
-                data={
-                    'result':True
-                }
+                
+            response = HttpResponse(
+                result.getvalue(),
+                content='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             )
+            response['Content-Disposition'] = 'attachment; filename=export.xlsx'    
+            return response
+            
         else:
             errors_list = []
             for field,errors in form.errors.items(): 
