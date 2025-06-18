@@ -19,7 +19,7 @@ class Configuration(models.Model):
         max_length=255,
         validators=[
             RegexValidator(
-                regex='^[a-z_][a-z0-9_]*$',
+                regex=r'^[a-z_][a-z0-9_]*$',
                 message=_('App name not allow.'),
                 code='app_name_wrong'
             )
@@ -31,7 +31,7 @@ class Configuration(models.Model):
         max_length=255,
         validators=[
             RegexValidator(
-                regex='^[a-zA-Z]+$',
+                regex=r'^[a-zA-Z]+$',
                 message=_('This field contains invalid characters.'),
                 code='invalid_characters'
             )
@@ -59,7 +59,7 @@ class Template(models.Model):
         max_length=255,
         validators=[
             RegexValidator(
-                regex='^[a-zA-Z _\-\[\]\(\)\{\}]+$',
+                regex=r'^[a-zA-Z _\-\[\]\(\)\{\}]+$',
                 message=_('This field contains invalid characters.'),
                 code='invalid_characters'
             )
@@ -71,7 +71,7 @@ class Template(models.Model):
         max_length=255,
         validators=[
             RegexValidator(
-                regex='^[a-zA-Z]+$',
+                regex=r'^[a-zA-Z]+$',
                 message=_('This field contains invalid characters.'),
                 code='invalid_characters'
             )
@@ -83,7 +83,7 @@ class Template(models.Model):
         max_length=255,
         validators=[
             RegexValidator(
-                regex='^[a-zA-Z_]+$',
+                regex=r'^[a-zA-Z_]+$',
                 message=_('This field contains invalid characters.'),
                 code='invalid_characters'
             )
@@ -118,7 +118,7 @@ class Category(models.Model):
         unique=True,
         validators=[
             RegexValidator(
-                regex='^[a-zA-Z0-9 ]+$',
+                regex=r'^[a-zA-Z0-9 ]+$',
                 message=_('This field contains invalid characters.'),
                 code='invalid_characters'
             )
@@ -131,7 +131,7 @@ class Category(models.Model):
             MaxLengthValidator(500),
             MinLengthValidator(10),
             RegexValidator(
-                regex='^[a-zA-Z0-9 ]+$',
+                regex=r'^[a-zA-Z0-9 ]+$',
                 message=_('This field contains invalid characters.'),
                 code='invalid_characters'
             )
@@ -156,7 +156,7 @@ class Supplier(models.Model):
         max_length=50,
         validators=[
             RegexValidator(
-                regex='^[a-zA-Z0-9 ]+$',
+                regex=r'^[a-zA-Z0-9 ]+$',
                 message=_('This field contains invalid characters.'),
                 code='invalid_characters'
             )
@@ -169,7 +169,7 @@ class Supplier(models.Model):
             MaxLengthValidator(500),
             MinLengthValidator(10),
             RegexValidator(
-                regex='^[a-zA-Z0-9 ]+$',
+                regex=r'^[a-zA-Z0-9 ]+$',
                 message=_('This field contains invalid characters.'),
                 code='invalid_characters'
             )
@@ -196,7 +196,7 @@ class Product(models.Model):
         validators=[
             MinLengthValidator(7),
             RegexValidator(
-                regex='^[A-Z]{3}-[0-9]{3}$',
+                regex=r'^[A-Z]{3}-[0-9]{3}$',
                 message=_('Code value must match with the following pattern (3 values from A-Z, - and 3 numbers), example COD-001.'),
                 code='code_not_valid'
             )
@@ -209,7 +209,7 @@ class Product(models.Model):
         validators=[
             MinLengthValidator(3),
             RegexValidator(
-                regex='^[a-zA-Z0-9 ]+$',
+                regex=r'^[a-zA-Z0-9 ]+$',
                 message=_('Name contains invalid characters, allowed characters are only (-).'),
                 code='name_not_valid'
             )
@@ -242,7 +242,7 @@ class Product(models.Model):
         blank=True,
         validators=[
             RegexValidator(
-                regex='^[a-zA-Z0-9 -*@#.]+$',
+                regex=r'^[a-zA-Z0-9 -*@#.]+$',
                 message=_('Field contains invalid characters, allowed characters are (- * @ # . )'),
                 code='invalid_characters'
             ),
