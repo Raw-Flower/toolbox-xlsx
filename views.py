@@ -1,5 +1,5 @@
 from django.urls import reverse_lazy
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, FileResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.views.generic import CreateView, ListView, UpdateView, TemplateView, DeleteView
 from django.contrib import messages
@@ -204,21 +204,13 @@ def generate_xlsx_file(request):
             queryset = model.objects.filter(**queryparams)# Filter the model loaded and apply the same filters as the user
             
             result = asyncio.run(sync_to_async(prepare_xlsx_export)(queryset,template_config,config_instance.id))
-            print(result)
-            
-            #Create xlsx file
-                #create dataframe using pandas
-                #Transfer this dataframe to real xlsx file
-                #Save this file as a log
-                #Return log ID
-                
+
             response = HttpResponse(
                 result.getvalue(),
-                content='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             )
-            response['Content-Disposition'] = 'attachment; filename=export.xlsx'    
+            response['Content-Disposition'] = 'attachment; filename="export.xlsx"'
             return response
-            
         else:
             errors_list = []
             for field,errors in form.errors.items(): 

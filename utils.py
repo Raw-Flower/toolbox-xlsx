@@ -2,8 +2,7 @@ from django.apps import apps
 from django.conf import settings
 import time
 from openpyxl import Workbook
-from .models import Template
-import pandas as pd
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from io import BytesIO
 
 def getCurrentApps():
@@ -49,18 +48,40 @@ def sync_def():
 
 def prepare_xlsx_export(queryset,template_config,config_id):
     workbook = Workbook() # Create file
-    current_sheet = workbook.active # Select sheet    
+    current_sheet = workbook.active # Select sheet 
     
-    # Headers
-    headers = [template.label for template in template_config]
-    current_sheet.append(headers)
+    # Header styles
+    header_font = Font(bold=True, color="000000")
+    header_fill = PatternFill(start_color="5DE2E7", end_color="5DE2E7", fill_type="solid")
+    header_aligment = Alignment(horizontal='center',vertical='center')
+    header_border = Border(
+        top=Side(border_style='thin',color='000000'),
+        right=Side(border_style='thin',color='000000'),
+        bottom=Side(border_style='thin',color='000000'),
+        left=Side(border_style='thin',color='000000')
+    )
+   
+    # Headers values
+    headers_values = [template.label for template in template_config]
     
-    # Rows
+    # Adding headers
+    for col,label in enumerate(headers_values,start=1):
+        cell = current_sheet.cell(row=1, column=col, value=label)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = header_aligment
+        cell.border = header_border
+    
+    # Adding rows
     for record in queryset:
         row = [str(getattr(record,template.value,'')) for template in template_config]
         current_sheet.append(row)
             
     output = BytesIO()
     workbook.save(output)
-    output.seek(0)
+    
+    # Create export log
+    
+    
+    
     return output
