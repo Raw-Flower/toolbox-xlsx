@@ -23,5 +23,7 @@
             <a href='{% url "xlsx:template_grid" config_id=request.resolver_match.kwargs.config_id %}?type={{request.GET.type}}'>Return to template grid</a>
         </div>
     </div>
-    <script src="{% static 'js/get_options.js' %}"></script>
 {% endblock content %}
+{% block custom_scripts %}
+    <script src="{% static 'js/get_options.js' %}"></script>
+{% endblock custom_scripts %}

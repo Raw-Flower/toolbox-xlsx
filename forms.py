@@ -150,7 +150,6 @@ class ExportParamsForm(forms.Form):
     def clean_model(self):
         try:
             model = apps.get_model(app_label=self.cleaned_data['app'], model_name=self.cleaned_data['model'])
-            print(model)
         except LookupError:
             raise ValidationError(
                 message='The app or model provide are not valid',

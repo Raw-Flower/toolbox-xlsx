@@ -33,5 +33,7 @@
             {% endif %}
         </div>
     </div>
-    <script src="{% static 'js/get_options.js' %}"></script>
 {% endblock content %}
+{% block custom_scripts %}
+    <script src="{% static 'js/get_options.js' %}"></script>
+{% endblock custom_scripts %}
