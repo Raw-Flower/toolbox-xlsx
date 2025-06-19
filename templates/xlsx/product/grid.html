@@ -1,5 +1,6 @@
 {% extends 'xlsx/base/base.html' %}
 {% load humanize %}
+{% load static %}
 {% block subtitle %}Product grid{% endblock subtitle %}
 {% block content %}
 {% include 'core/includes/messages.html' %}
@@ -10,7 +11,7 @@
                     <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#filterBox"><i class="bi bi-funnel"></i></button>
                     <a href='{% url "xlsx:product_add" %}' class='btn btn-success'><i class="bi bi-plus-circle"></i> Add new product</a>
                     {% csrf_token %}
-                    <button class='btn btn-warning' onclick='generateExportFile(this)'><i class="bi bi-file-earmark-arrow-down"></i><span id='export_btn_label'>Export</span></button>
+                    <button class='btn btn-warning' data-app='xlsx' data-model='Product' id='generate_export'><i class="bi bi-file-earmark-arrow-down"></i><span id='export_btn_label'>Export</span></button>
                 </p>
                 <div class="collapse" id="filterBox">
                     <div class="card card-body">
@@ -68,46 +69,7 @@
 
         </div>
     </div>
-    <script>
-        function generateExportFile(button){
-            const btn_label = document.getElementById('export_btn_label')
-
-            button.disabled = true;
-            btn_label.innerHTML = 'Processing...'
-
-            const queryString = window.location.search;
-            const urlParams = new URLSearchParams(queryString);
-            const params2send = new FormData()
-            const token = document.getElementsByName('csrfmiddlewaretoken')
-
-            for(param of urlParams) {
-                params2send.append(param[0],param[1])
-            }
-
-            params2send.append('csrfmiddlewaretoken',token[0].value)
-            params2send.append('app','xlsx')
-            params2send.append('model','Product')
-            params2send.append('template_type',1)
-
-            fetch('../get-xlsx-file/',{
-                method: 'POST',
-                body: params2send
-            })
-            .then(response => response.json())
-            .then(data => {
-                button.disabled = false;
-                btn_label.innerText = 'Export'
-                if(data.result){
-                    window.location.href = data.file_path;
-                }else{
-                    alert('File generation has been failed, please contact system administrator.')
-                }
-            })
-            .catch(error => {
-                button.disabled = false;
-                btn_label.innerText = 'Export'
-                console.error('Error fetching data:', error)
-            });
-        }
-    </script>
 {% endblock content %}
+{% block custom_scripts %}
+    <script src="{% static 'js/send_export_request.js' %}"></script>
+{% endblock custom_scripts %}

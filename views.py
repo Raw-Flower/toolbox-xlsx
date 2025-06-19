@@ -190,42 +190,69 @@ def generate_xlsx_file(request):
     if request.method == 'POST':
         form = ExportParamsForm(request.POST)
         if form.is_valid():
-            #Get template configuration
-            config_instance = Configuration.objects.get(app=form.cleaned_data.get('app'),model=form.cleaned_data.get('model')) # Get config instance
-            template_config = Template.objects.filter(configuration=config_instance.id,type=form.cleaned_data.get('template_type')).order_by('column') # Get template config for export
-            model = apps.get_model(app_label=form.cleaned_data.get('app'), model_name=form.cleaned_data.get('model')) # Get model for query
-            
-            #Prepare parameters for get same result as user
-            queryparams = {}
-            for field in template_config: # Loop template fields
-                if field.value in request.POST and request.POST.get(field.value): # If template field found on user request, added to query params 
-                    queryparams[field.value] = request.POST.get(field.value)# Query params same as the user
-            queryset = model.objects.filter(**queryparams)# Filter the model loaded and apply the same filters as the user
-            
-            # FileLog creation
-            file_log = FileLogs.objects.create()
-            
-            # Call Async function and create file
-            log_instance = asyncio.run(sync_to_async(prepare_xlsx_export)(queryset,template_config,file_log))
-            
-            if log_instance.status == 2: # Completed
-                # Return file
+            try:
+                #Get template configuration
+                config_instance = Configuration.objects.get(app=form.cleaned_data.get('app'), model=form.cleaned_data.get('model'))
+                template_config = Template.objects.filter(configuration=config_instance.id, type=1).order_by('column')
+            except Configuration.DoesNotExist:
                 return JsonResponse(
                     data={
-                        'result':True,
-                        'file_path':log_instance.file.url
+                        'result':False,
+                        'error_message':f'ERROR(Configuration not found): Please create the based configuration first and then try again.'
                     }
                 )
-            return JsonResponse(
-                data={
-                    'result':False
-                }
-            )
+            except Template.DoesNotExist:
+                return JsonResponse(
+                    data={
+                        'result':False,
+                        'error_message':f'ERROR(Template config not found): Please create the export template configuration and then try again.'
+                    }
+                )
+            except Exception as e:
+                print(f'{type(e).__name__}:{e}')
+                return JsonResponse(
+                    data={
+                        'result':False,
+                        'error_message':f'ERROR({type(e).__name__}): Please contact system administrator'
+                    }
+                )
+            else:
+                # Get model for query
+                model = apps.get_model(app_label=form.cleaned_data.get('app'), model_name=form.cleaned_data.get('model'))
+                
+                #Prepare parameters for get same result as user
+                queryparams = {}
+                for field in template_config: # Loop template fields
+                    if field.value in request.POST and request.POST.get(field.value): # If template field found on user request, added to query params 
+                        queryparams[field.value] = request.POST.get(field.value)# Query params same as the user
+                queryset = model.objects.filter(**queryparams)# Filter the model loaded and apply the same filters as the user
+            
+                # FileLog creation
+                file_log = FileLogs.objects.create()
+                
+                # Call Async function and create file
+                log_instance = asyncio.run(sync_to_async(prepare_xlsx_export)(queryset,template_config,file_log))
+                
+                if log_instance.status == 2: # Completed
+                    # Return file
+                    return JsonResponse(
+                        data={
+                            'result':True,
+                            'file_path':log_instance.file.url
+                        }
+                    )
+                return JsonResponse(
+                    data={
+                        'result':False,
+                        'error_message':'Log instance still pending, please check log grid.'
+                    }
+                )
         else:
+            print('error form')
             errors_list = []
             for field,errors in form.errors.items(): 
                 for error in errors:
-                    errors_list.append(error)
+                    errors_list.append(f'{field} - {error}')
             return JsonResponse(
                 data={
                     'result':False,
