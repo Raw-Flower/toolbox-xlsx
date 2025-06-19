@@ -3,7 +3,17 @@ from django.conf import settings
 import time
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
-from io import BytesIO
+from tempfile import NamedTemporaryFile
+import uuid
+from django.core.files.base import File
+
+
+def getFilePath(instance,filename):
+    unique_id = uuid.uuid4().hex
+    fileExt = filename[filename.index('.'):]
+    newFileName = f'{unique_id}{fileExt}'
+    path = f'xlsx/exports/{newFileName}'
+    return path
 
 def getCurrentApps():
     current_apps = apps.get_app_configs()
@@ -46,9 +56,9 @@ def sync_def():
     print('Ending...')
     return True
 
-def prepare_xlsx_export(queryset,template_config,config_id):
+def prepare_xlsx_export(queryset,template_config,log_instance):
     workbook = Workbook() # Create file
-    current_sheet = workbook.active # Select sheet 
+    current_sheet = workbook.active # Select sheet
     
     # Header styles
     header_font = Font(bold=True, color="000000")
@@ -76,12 +86,13 @@ def prepare_xlsx_export(queryset,template_config,config_id):
     for record in queryset:
         row = [str(getattr(record,template.value,'')) for template in template_config]
         current_sheet.append(row)
-            
-    output = BytesIO()
-    workbook.save(output)
-    
-    # Create export log
-    
-    
-    
-    return output
+              
+    # Saving temp file in log instance
+    with NamedTemporaryFile(suffix='.xlsx', delete=False) as temp:
+        workbook.save(temp.name)
+        temp.seek(0)
+        log_instance.file.save('export.xlsx',File(temp))
+        log_instance.status = 2
+        log_instance.save()
+        
+    return log_instance

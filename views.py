@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Q
 from django.apps import apps
-from .models import Product, Category, Supplier, Configuration, Template
+from .models import Product, Category, Supplier, Configuration, Template, FileLogs
 from .forms import ProductForm, ProductFilterForm, CategoryForm, CategoryFilterForm, SupplierForm, SupplierFilterForm, ConfigurationForm, ConfigurationFilterForm, TemplateForm, ExportParamsForm
 from core.utils import get_query_conditions
 from .utils import getModelsByApp, prepare_xlsx_export, sync_def
@@ -187,7 +187,6 @@ async def async_testing(request):
     )
     
 def generate_xlsx_file(request):
-    print('generando file...')
     if request.method == 'POST':
         form = ExportParamsForm(request.POST)
         if form.is_valid():
@@ -203,14 +202,25 @@ def generate_xlsx_file(request):
                     queryparams[field.value] = request.POST.get(field.value)# Query params same as the user
             queryset = model.objects.filter(**queryparams)# Filter the model loaded and apply the same filters as the user
             
-            result = asyncio.run(sync_to_async(prepare_xlsx_export)(queryset,template_config,config_instance.id))
-
-            response = HttpResponse(
-                result.getvalue(),
-                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            # FileLog creation
+            file_log = FileLogs.objects.create()
+            
+            # Call Async function and create file
+            log_instance = asyncio.run(sync_to_async(prepare_xlsx_export)(queryset,template_config,file_log))
+            
+            if log_instance.status == 2: # Completed
+                # Return file
+                return JsonResponse(
+                    data={
+                        'result':True,
+                        'file_path':log_instance.file.url
+                    }
+                )
+            return JsonResponse(
+                data={
+                    'result':False
+                }
             )
-            response['Content-Disposition'] = 'attachment; filename="export.xlsx"'
-            return response
         else:
             errors_list = []
             for field,errors in form.errors.items(): 

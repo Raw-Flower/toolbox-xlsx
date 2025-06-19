@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MaxLengthValidator, MinLengthValidator, RegexValidator, MinValueValidator
+from .utils import getFilePath
 
 # Create your models here.
 class Status(models.IntegerChoices):
@@ -12,6 +13,11 @@ class TemplateType(models.IntegerChoices):
     type_export = (1,'Export')
     type_import = (2,'Import')
     __empty__ = ('-- Type --')
+    
+class LogStatus(models.IntegerChoices):
+    cancel = (0,'Cancelled')
+    pending = (1,'Pending')
+    complete = (2,'Completed')
     
 class Configuration(models.Model):
     app = models.CharField(
@@ -260,3 +266,16 @@ class Product(models.Model):
         
     def __str__(self):
         return self.code
+    
+class FileLogs(models.Model):
+    createtime = models.DateField(auto_now_add=True)
+    status = models.IntegerField(_("Status"), choices=LogStatus, default=LogStatus.pending)
+    file = models.FileField(_('File related'), upload_to=getFilePath, null=True, blank=True)
+    
+    class Meta:
+        verbose_name = 'File log'
+        verbose_name_plural = 'File logs'
+        ordering = ['-createtime']
+    
+    def __str__(self):
+        return str(self.id)

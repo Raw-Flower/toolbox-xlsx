@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Product, Category, Supplier, Configuration, Template
+from .models import Product, Category, Supplier, Configuration, Template, FileLogs
 
 # Register your models here.
 class ProductAdmin(admin.ModelAdmin):
@@ -32,9 +32,14 @@ class TemplateAdmin(admin.ModelAdmin):
     list_filter = ['type','status']
     search_fields = ['configuration','column','value']
     
+class FileLogsAdmin(admin.ModelAdmin):
+    list_display = ['id','file','createtime','status']
+    readonly_fields = ['createtime']
+    search_fields = ['id']
+    
 admin.site.register(Product, ProductAdmin)
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(Supplier, SupplierAdmin)
 admin.site.register(Configuration, ConfigurationAdmin)
 admin.site.register(Template, TemplateAdmin)
-
+admin.site.register(FileLogs, FileLogsAdmin)

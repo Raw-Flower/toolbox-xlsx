@@ -93,31 +93,14 @@
                 method: 'POST',
                 body: params2send
             })
-            .then(response => {
+            .then(response => response.json())
+            .then(data => {
                 button.disabled = false;
                 btn_label.innerText = 'Export'
-                const contentType = response.headers.get('Content-Type')
-                console.log(contentType)
-                if (contentType.includes('application/json')){
-                    const data = response.json()
-                    if (data.form_errors){
-                        let message = 'Your request has been failed, please review the following errors: \n'
-                        for(const error of data.form_errors){
-                            message+=`* ${error}\n` 
-                        }
-                        alert(message)
-                    }else{
-                        alert('Export error, please contact system administrator.')
-                    }
-                } else{
-                    const data = response.blob()
-                    .then(data =>{
-                        const url = window.URL.createObjectURL(data)
-                        const a = document.createElement('a')
-                        a.href = url
-                        a.download = 'export.xlsx'
-                        a.click()
-                    })
+                if(data.result){
+                    window.location.href = data.file_path;
+                }else{
+                    alert('File generation has been failed, please contact system administrator.')
                 }
             })
             .catch(error => {
@@ -125,8 +108,6 @@
                 btn_label.innerText = 'Export'
                 console.error('Error fetching data:', error)
             });
-
         }
-
     </script>
 {% endblock content %}
