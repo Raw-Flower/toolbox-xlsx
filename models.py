@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MaxLengthValidator, MinLengthValidator, RegexValidator, MinValueValidator
-from .utils import getFilePath
+from .utils import getFilePath, getImportTemplatePath
 
 # Create your models here.
 class Status(models.IntegerChoices):
@@ -42,6 +42,19 @@ class Configuration(models.Model):
                 code='invalid_characters'
             )
         ]
+    )
+    
+    import_template = models.FileField(
+        verbose_name=_('Import template'),
+        blank=True,
+        null=True,
+        upload_to=getImportTemplatePath,
+    )
+    
+    template_config = models.JSONField(
+        verbose_name=_('Template configuration'),
+        blank=True,
+        null=True
     )
     
     status = models.IntegerField(_("Status"), choices=Status, default=Status.enable)

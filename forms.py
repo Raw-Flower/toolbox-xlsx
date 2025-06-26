@@ -139,6 +139,7 @@ class ExportParamsForm(forms.Form):
         ]
     )
     
+    '''
     template_type = forms.ChoiceField(
         label='template_type', 
         choices=[
@@ -146,6 +147,7 @@ class ExportParamsForm(forms.Form):
             ('2','import')
         ], 
     )
+    '''
             
     def clean_model(self):
         try:

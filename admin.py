@@ -21,8 +21,8 @@ class SupplierAdmin(admin.ModelAdmin):
     search_fields = ['name']
     
 class ConfigurationAdmin(admin.ModelAdmin):
-    list_display = ['id','app','model','status']
-    readonly_fields = ['createtime','updatetime']
+    list_display = ['id','app','model','import_template','status']
+    readonly_fields = ['createtime','updatetime','import_template','template_config']
     list_filter = ['status']
     search_fields = ['app','model']
     

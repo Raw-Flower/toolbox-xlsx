@@ -8,19 +8,20 @@ import os
 from pathlib import Path
 
 @receiver(post_save, sender=Configuration)
-def createTemplateConfig(sender, instance, raw, using, update_fields, **kwargs):
+def createTemplateConfig(sender, instance, created, raw, using, **kwargs):
     model = apps.get_model(instance.app,instance.model)
     model_fields = model._meta.get_fields()
     template_types = ['export','import']
-    for type in template_types:
-        for i,v in enumerate(model_fields):
-            Template(
-                configuration = instance,
-                type = TemplateType.type_export if type == 'export' else TemplateType.type_import,
-                label = v.name,
-                column = getColumn(i),
-                value = v.name,
-            ).save()
+    if created:
+        for type in template_types:
+            for i,v in enumerate(model_fields):
+                Template(
+                    configuration = instance,
+                    type = TemplateType.type_export if type == 'export' else TemplateType.type_import,
+                    label = v.name,
+                    column = getColumn(i),
+                    value = v.name,
+                ).save()
             
 @receiver(post_delete, sender=FileLogs)
 def removeLogFile(sender, instance, using, origin, **kwargs):

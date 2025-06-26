@@ -14,7 +14,7 @@ urlpatterns = [
     path(route='get-models/<str:app_name>', view=get_models),
     path(route='get-xlsx-file/', view=generate_xlsx_file),
     path(route='async-def/', view=async_testing),
-
+    path(route='import-request/', view=import_request),
     
     #PRODUCT
     path(route='product/grid',view=ProductListView.as_view(),name='product_grid'),
