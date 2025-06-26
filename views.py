@@ -9,7 +9,7 @@ from django.apps import apps
 from .models import Product, Category, Supplier, Configuration, Template, FileLogs
 from .forms import ProductForm, ProductFilterForm, CategoryForm, CategoryFilterForm, SupplierForm, SupplierFilterForm, ConfigurationForm, ConfigurationFilterForm, TemplateForm, ExportParamsForm
 from core.utils import get_query_conditions
-from .utils import getModelsByApp, prepare_xlsx_export, sync_def
+from .utils import getModelsByApp, prepare_xlsx_export, sync_def, create_import_template, delete_old_import_template
 from .mixins import CheckTypeParameter
 from asgiref.sync import sync_to_async
 import asyncio
@@ -248,7 +248,6 @@ def generate_xlsx_file(request):
                     }
                 )
         else:
-            print('error form')
             errors_list = []
             for field,errors in form.errors.items(): 
                 for error in errors:
@@ -263,6 +262,64 @@ def generate_xlsx_file(request):
         data={
             'result':False,
             'error':'Only post request are allow.'
+        }
+    )
+    
+def import_request(request):
+    if request.method == 'POST':
+        form = ExportParamsForm(request.POST)
+        if form.is_valid():
+            try:
+                #Get template configuration
+                config_instance = Configuration.objects.get(app=form.cleaned_data.get('app'), model=form.cleaned_data.get('model'))
+                template_config = Template.objects.filter(configuration=config_instance.id, type=2).order_by('column')
+            except Configuration.DoesNotExist:
+                return JsonResponse(
+                    data={
+                        'result':False,
+                        'error_message':f'ERROR(Configuration not found): Please create the based configuration first and then try again.'
+                    }
+                )
+            except Template.DoesNotExist:
+                return JsonResponse(
+                    data={
+                        'result':False,
+                        'error_message':f'ERROR(Template config not found): Please create the import template configuration and then try again.'
+                    }
+                )
+            except Exception as e:
+                print(f'{type(e).__name__}:{e}')
+                return JsonResponse(
+                    data={
+                        'result':False,
+                        'error_message':f'ERROR({type(e).__name__}): Please contact system administrator'
+                    }
+                )
+            else:
+                if not config_instance.template_config:
+                # Configuration not created, proceed normally
+                    create_import_template(config_instance,template_config)
+                    return JsonResponse(
+                        data={
+                            'result':True
+                        }
+                    )
+                else:
+                    # Configuration found, run validation
+                    current_headers = [template.label for template in template_config]
+                    print(current_headers)
+                    print(config_instance.template_config)
+                    if current_headers != config_instance.template_config:
+                        delete_old_import_template(config_instance)
+                        create_import_template(config_instance,template_config)
+                        return JsonResponse(
+                            data={
+                                'result':True
+                            }
+                        )
+    return JsonResponse(
+        data={
+            'result':False
         }
     )
 
