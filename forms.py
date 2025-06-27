@@ -79,6 +79,7 @@ class TemplateForm(forms.ModelForm):
     # Init method with custom parameter
     def __init__(self,*args, config_id=None, file_type=None, **kwargs): #Send custom parameter to form
         self.file_type = 1 if file_type == 'export' else 2
+        self.config_id = config_id
         super().__init__(*args, **kwargs)
         
         if config_id: # Check if the custom parameter has form
@@ -91,7 +92,7 @@ class TemplateForm(forms.ModelForm):
     def clean_column(self):
         column2check = self.cleaned_data.get('column')
         type2filter = self.file_type if not self.instance.id else self.instance.type
-        queryset = Template.objects.filter(column=column2check,type=type2filter)
+        queryset = Template.objects.filter(column=column2check,type=type2filter,configuration=self.config_id)
         if self.instance.id:
             queryset = queryset.exclude(id=self.instance.id)
         if queryset.exists():
@@ -104,7 +105,7 @@ class TemplateForm(forms.ModelForm):
     def clean_value(self):
         value2check = self.cleaned_data.get('value')
         type2filter = self.file_type if not self.instance.id else self.instance.type
-        queryset = Template.objects.filter(value=value2check,type=type2filter)
+        queryset = Template.objects.filter(value=value2check,type=type2filter,configuration=self.config_id)
         if self.instance.id:
             queryset = queryset.exclude(id=self.instance.id)
         if queryset.exists():

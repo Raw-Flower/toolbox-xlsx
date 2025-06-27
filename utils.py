@@ -134,7 +134,7 @@ def create_import_template(config_instance,template_config):
         workbook.save(temp.name)
         temp.seek(0)
         config_instance.import_template.save('import_template.xlsx',File(temp))
-        config_instance.template_config = headers_values
+        config_instance.template_config = {record.column:record.value for record in template_config}
         config_instance.save()
     
     #Return configuration instance(should have the template now) 

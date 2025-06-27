@@ -26,7 +26,11 @@ button.addEventListener('click', function () {
         button.innerText = 'Add/Update template'
 
         //Processing request
-        console.log(data)
+        if(data.result){
+            alert('Import template was created/updated sucucesffully.')
+        }else{
+            alert(`ERROR: ${data.error_message}`)
+        }
     })
     .catch(error => {
         // Enable button

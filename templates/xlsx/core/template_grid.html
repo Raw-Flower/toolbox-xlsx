@@ -13,7 +13,7 @@
                     <a href='{% url "xlsx:template_create" config_id=request.resolver_match.kwargs.config_id %}?type={{request.GET.type}}' class='btn btn-primary'><i class="bi bi-plus-lg"></i> New template column</a>
                     {% if request.GET.type == 'import' %}
                         {% csrf_token %} 
-                        <button id='import_request' class='btn btn-warning' type='button' data-app='xlsx' data-model='Product'>Add/Update template</button>
+                        <button id='import_request' class='btn btn-warning' type='button' data-app='xlsx' data-model='Category'>Add/Update template</button>
                     {% endif %}
                         
                 </p>
