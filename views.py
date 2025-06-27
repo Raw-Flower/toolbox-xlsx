@@ -305,11 +305,27 @@ def import_request(request):
                         }
                     )
                 else:
-                    # Configuration found, run validation
-                    current_headers = [template.label for template in template_config]
-                    print(current_headers)
-                    print(config_instance.template_config)
-                    if current_headers != config_instance.template_config:
+                    # Compare current template configuration with config_instance.template_config
+                    instance_configuration = config_instance.template_config
+                    new_template_flag = False
+                    
+                    # Check configuration len
+                    if (len(template_config) == len(instance_configuration.keys())):
+                        for record in template_config:
+                            column = record.column
+                            if not instance_configuration.get(column):
+                                new_template_flag = True
+                                break
+                            
+                            if record.value != instance_configuration.get(column):
+                                new_template_flag = True
+                                break
+                    else:
+                        new_template_flag = True
+                    
+                    # Check falg value and decide if need new config or not
+                    if new_template_flag:
+                        # Found differences on the configuration, delete and create new import template
                         delete_old_import_template(config_instance)
                         create_import_template(config_instance,template_config)
                         return JsonResponse(
@@ -317,9 +333,19 @@ def import_request(request):
                                 'result':True
                             }
                         )
+                    else:
+                        # Same configuration found, not created new one
+                        return JsonResponse(
+                            data={
+                                'result':False,
+                                'error_message':'Your current template configuration did not change, if you want to modify the current template, please update the template config first.'
+                            }
+                        ) 
+                        
     return JsonResponse(
         data={
-            'result':False
+            'result':False,
+            'error_message':'HTTP Method not support or your data send is currently invalid, please check and try again.'
         }
     )
 
