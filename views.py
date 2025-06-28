@@ -1,7 +1,7 @@
 from django.urls import reverse_lazy
-from django.http import JsonResponse, HttpResponse, FileResponse
-from django.shortcuts import get_object_or_404, redirect
-from django.views.generic import CreateView, ListView, UpdateView, TemplateView, DeleteView
+from django.http import JsonResponse, HttpResponse, FileResponse, HttpResponseRedirect
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.generic import CreateView, ListView, UpdateView, TemplateView, DeleteView, View
 from django.contrib import messages
 from django.utils.translation import gettext_lazy as _
 from django.db.models import Q
@@ -60,6 +60,88 @@ class ConfigGrid(ListView):
                 messages.error(request=self.request,message='Your filters present some issues, please check and try again.')
         return queryset
     
+class ConfigImportTemplate_Request(View):
+    def get(self, *args, **kwargs):
+        return render(
+            request=self.request,
+            template_name='xlsx/core/config_import_template_request.html',
+            context={
+                'config':get_object_or_404(Configuration,id=self.kwargs['config_id'])
+            }
+        )
+    
+    def post(self, *args, **kwargs):
+        config_instance = get_object_or_404(Configuration,id=self.kwargs['config_id'])
+        try:
+            template_config = Template.objects.filter(configuration=config_instance.id, type=2).order_by('column')
+        except Template.DoesNotExist:
+            messages.error(
+                request=self.request,
+                message=_('Import template configuration dont found, please added first and try again.')
+            )
+            return HttpResponseRedirect(
+                redirect_to=self.request.path
+            )
+        except Exception as e:
+            messages.error(
+                request=self.request,
+                message=_(f'ERROR({type(e).__name__}):{e}')
+            )
+            return HttpResponseRedirect(
+                redirect_to=self.request.path
+            )
+        else:
+            if not config_instance.template_config:
+                # Configuration not created, proceed normally
+                create_import_template(config_instance,template_config)
+                messages.success(
+                    request=self.request,
+                    message=_('Import template was created succesfully.')
+                )
+                return HttpResponseRedirect(
+                    redirect_to=reverse_lazy('xlsx:config_grid')
+                )
+            else:
+                # Compare current template configuration with config_instance.template_config
+                instance_template_config = config_instance.template_config
+                new_template_flag = False
+                    
+                # Check configuration len
+                if (len(template_config) == len(instance_template_config.keys())):
+                    for record in template_config:
+                        column = record.column
+                        if not instance_template_config.get(column):
+                            new_template_flag = True
+                            break
+                        
+                        if record.value != instance_template_config.get(column):
+                            new_template_flag = True
+                            break
+                else:
+                    new_template_flag = True
+                    
+                # Check flag value and decide if need new config or not
+                if new_template_flag:
+                    # Found differences on the configuration, delete and create new import template
+                    delete_old_import_template(config_instance)
+                    create_import_template(config_instance,template_config)
+                    messages.success(
+                        request=self.request,
+                        message=_('Import template was updated succesfully.')
+                    )
+                    return HttpResponseRedirect(
+                        redirect_to=reverse_lazy('xlsx:config_grid')
+                    )
+                else:
+                    # Same configuration found, not created new one
+                    messages.error(
+                        request=self.request,
+                        message=_('Your current template configuration did not change, if you want to modify the current template, please update the template config first.')
+                    )
+                    return HttpResponseRedirect(
+                        redirect_to=self.request.path
+                    )
+
 class TemplateGrid(CheckTypeParameter, ListView):
     model = Template
     template_name = 'xlsx/core/template_grid.html'
@@ -265,90 +347,6 @@ def generate_xlsx_file(request):
         }
     )
     
-def import_request(request):
-    if request.method == 'POST':
-        form = ExportParamsForm(request.POST)
-        if form.is_valid():
-            try:
-                #Get template configuration
-                config_instance = Configuration.objects.get(app=form.cleaned_data.get('app'), model=form.cleaned_data.get('model'))
-                template_config = Template.objects.filter(configuration=config_instance.id, type=2).order_by('column')
-            except Configuration.DoesNotExist:
-                return JsonResponse(
-                    data={
-                        'result':False,
-                        'error_message':f'ERROR(Configuration not found): Please create the based configuration first and then try again.'
-                    }
-                )
-            except Template.DoesNotExist:
-                return JsonResponse(
-                    data={
-                        'result':False,
-                        'error_message':f'ERROR(Template config not found): Please create the import template configuration and then try again.'
-                    }
-                )
-            except Exception as e:
-                print(f'{type(e).__name__}:{e}')
-                return JsonResponse(
-                    data={
-                        'result':False,
-                        'error_message':f'ERROR({type(e).__name__}): Please contact system administrator'
-                    }
-                )
-            else:
-                if not config_instance.template_config:
-                # Configuration not created, proceed normally
-                    create_import_template(config_instance,template_config)
-                    return JsonResponse(
-                        data={
-                            'result':True
-                        }
-                    )
-                else:
-                    # Compare current template configuration with config_instance.template_config
-                    instance_configuration = config_instance.template_config
-                    new_template_flag = False
-                    
-                    # Check configuration len
-                    if (len(template_config) == len(instance_configuration.keys())):
-                        for record in template_config:
-                            column = record.column
-                            if not instance_configuration.get(column):
-                                new_template_flag = True
-                                break
-                            
-                            if record.value != instance_configuration.get(column):
-                                new_template_flag = True
-                                break
-                    else:
-                        new_template_flag = True
-                    
-                    # Check falg value and decide if need new config or not
-                    if new_template_flag:
-                        # Found differences on the configuration, delete and create new import template
-                        delete_old_import_template(config_instance)
-                        create_import_template(config_instance,template_config)
-                        return JsonResponse(
-                            data={
-                                'result':True
-                            }
-                        )
-                    else:
-                        # Same configuration found, not created new one
-                        return JsonResponse(
-                            data={
-                                'result':False,
-                                'error_message':'Your current template configuration did not change, if you want to modify the current template, please update the template config first.'
-                            }
-                        ) 
-                        
-    return JsonResponse(
-        data={
-            'result':False,
-            'error_message':'HTTP Method not support or your data send is currently invalid, please check and try again.'
-        }
-    )
-
 # PRODUCT
 class ProductListView(ListView):
     model = Product

@@ -11,11 +11,6 @@
             <div class="col-lg-12">
                 <p class="d-inline-flex gap-2">
                     <a href='{% url "xlsx:template_create" config_id=request.resolver_match.kwargs.config_id %}?type={{request.GET.type}}' class='btn btn-primary'><i class="bi bi-plus-lg"></i> New template column</a>
-                    {% if request.GET.type == 'import' %}
-                        {% csrf_token %} 
-                        <button id='import_request' class='btn btn-warning' type='button' data-app='xlsx' data-model='Category'>Add/Update template</button>
-                    {% endif %}
-                        
                 </p>
             </div>
             <div class="col-lg-12">
@@ -61,6 +56,3 @@
         </div>
     </div>
 {% endblock content %}
-{% block custom_scripts %}
-    <script src="{% static 'js/import_template_request.js' %}"></script>
-{% endblock custom_scripts %}

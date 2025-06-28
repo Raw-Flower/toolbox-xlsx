@@ -31,6 +31,7 @@
                             <th scope="col">App</th>
                             <th scope="col">Model</th>
                             <th scope="col">Status</th>
+                            <th scope="col">Import template</th>
                             <th scope="col">Actions</th>
                         </tr>
                         </thead>
@@ -41,9 +42,11 @@
                                         <td>{{item.app}}</td>
                                         <td>{{item.model}}</td>
                                         <td>{{item.get_status_display}}</td>
+                                        <td><a href="{{item.import_template.url}}">Dowload</a></td>
                                         <td>
                                             <span><a href='{% url "xlsx:template_grid" config_id=item.id %}?type=export' title='Export configuration'><i class="bi bi-journal-arrow-down"></i></a></span>
-                                            <span><a href='{% url "xlsx:template_grid" config_id=item.id %}?type=import' title='Import configuration'><i class="bi bi-journal-arrow-up"></i></i></a></span>
+                                            <span><a href='{% url "xlsx:template_grid" config_id=item.id %}?type=import' title='Import configuration'><i class="bi bi-journal-arrow-up"></i></a></span>
+                                            <span><a href='{% url "xlsx:config_import_template" config_id=item.id %}' title='Import template request'><i class="bi bi-file-earmark-plus"></i></a></span>
                                             <span><a href='#' title='Disable'><i class="bi bi-x-octagon"></i></a></span>
                                         </td>
                                     </tr>
