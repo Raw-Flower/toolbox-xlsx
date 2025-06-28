@@ -85,7 +85,7 @@ class TemplateForm(forms.ModelForm):
         if config_id: # Check if the custom parameter has form
             instance = Configuration.objects.get(id=config_id)
             model = apps.get_model(instance.app,instance.model) # Get the model instance
-            field_choices = [(field.name,field.name) for field in model._meta.fields] #Create choices list
+            field_choices = [(field.name,field.name) for field in model._meta.fields if((field.concrete) and (field.name!='id'))] #Create choices list
             field_choices.insert(0,('','--Select field--')) #Default choice
             self.fields['value'].choices = field_choices #Assing choices to the field
             

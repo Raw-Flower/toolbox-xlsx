@@ -11,7 +11,7 @@ from pathlib import Path
 def createTemplateConfig(sender, instance, created, raw, using, **kwargs):
     if created:
         model = apps.get_model(instance.app,instance.model)
-        model_fields = [field.name for field in model._meta.get_fields() if field.concrete]  
+        model_fields = [field.name for field in model._meta.get_fields() if ((field.concrete) and (field.name!='id'))]  
         template_types = ['export','import']
         for type in template_types:
             for i,v in enumerate(model_fields):
