@@ -141,6 +141,33 @@ class ConfigImportTemplate_Request(View):
                     return HttpResponseRedirect(
                         redirect_to=self.request.path
                     )
+                    
+class ImportPanel(View):
+    def get(self, *args, **kwargs):
+        return render(
+            request=self.request,
+            template_name='xlsx/core/import_panel.html',
+            context={
+                'config_instance':get_object_or_404(Configuration, app=self.kwargs['app'], model=self.kwargs['model'])
+            }
+        )
+    
+    def post(self,*args, **kwargs):
+        config_instance = get_object_or_404(Configuration, app=self.kwargs['app'], model=self.kwargs['model'])
+        print(config_instance)
+        
+        # Compare currrent template configuration with the file sended
+        # If the columns are not the same, raise an error
+        # If columns are the same, begin with the verifications each records
+        # If the validations fails, write the error details into a new column but in the same row
+        # Use modelform_factory to build a dynamic form each model
+        
+        return JsonResponse(
+            data={
+                'result':False
+            }
+        )
+        
 
 class TemplateGrid(CheckTypeParameter, ListView):
     model = Template
