@@ -9,6 +9,7 @@
                 <p class="d-inline-flex gap-1">
                     <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#filterBox"><i class="bi bi-funnel"></i></button>
                     <a href='{% url "xlsx:category_add" %}' class='btn btn-success'><i class="bi bi-plus-circle"></i> Add new category</a>
+                    <a href='{% url "xlsx:import_panel" app="xlsx" model="Category" %} ' class='btn btn-warning'><i class="bi bi-file-plus"></i> Import panel</a>
                 </p>
                 <div class="collapse" id="filterBox">
                     <div class="card card-body">

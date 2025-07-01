@@ -1,0 +1,49 @@
+{% extends 'xlsx/base/base.html' %}
+{% load static %}
+{% block subtitle %}Configure{% endblock subtitle %}
+{% block content %}
+{% include 'core/includes/messages.html' %}
+    <div class="card">
+        <div class="card-header">Import panel</div>
+        <div class="card-body">
+            <form method="POST" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+                <div class='mb-2'>
+                    <label class="form-label fw-bold">App:</label>
+                    <span>{{config_instance.app}}</span>
+                </div>
+                <div class='mb-2'>
+                    <label class="form-label fw-bold">Model:</label>
+                    <span>{{config_instance.model}}</span>
+                </div>
+                <div class='mb-2'>
+                    <label class="form-label fw-bold">Import template:</label>
+                    <span> <a href="{{config_instance.import_template.url}}">Download</a></span>
+                </div>
+                <div class='mb-2'>
+                    <label for='template2upload' class="form-label fw-bold">Template to upload:</label>
+                    <input type="file" name="template2upload" id="template2upload" class='form-control'>
+                    <div id="template2uploadHelp" class="form-text">This file will contain the information to import into the system.</div>
+                </div>
+                <div class='mb-2'>
+                    <button class='btn btn-primary' type='submit'>Submit</button>
+                </div>
+            </form>
+            <div class="alert alert-info mb-2" role="alert">
+                <h4 class="alert-heading"><strong>Instructions</strong> <i class="bi bi-info-circle"></i></h4>
+                <p>
+                    From this panel you will be able to create records into this model(<strong>{{config_instance.app}}.{{config_instance.model}}</strong>) in a massive way following the next instructions or restrictions:
+                    <ul>
+                        <li>The validations will follow the same as the model currenlty has.</li>
+                        <li>File itselft will contains the errors details(if apply) in a new column called Error details.</li>
+                        <li>System will only process the content on the file.</li>
+                        <li>If the file dont match with the current import template will rise an error.</li>
+                    </ul>
+                </p>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
+{% block custom_scripts %}
+    <script src=""></script>
+{% endblock custom_scripts %}
