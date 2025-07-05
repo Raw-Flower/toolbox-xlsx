@@ -1,5 +1,5 @@
-from django.urls import reverse_lazy
-from django.http import JsonResponse, HttpResponse, FileResponse, HttpResponseRedirect
+from django.urls import reverse_lazy, reverse
+from django.http import JsonResponse, HttpResponse, FileResponse, HttpResponseRedirect, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic import CreateView, ListView, UpdateView, TemplateView, DeleteView, View
 from django.contrib import messages
@@ -13,6 +13,14 @@ from .utils import getModelsByApp, prepare_xlsx_export, sync_def, create_import_
 from .mixins import CheckTypeParameter
 from asgiref.sync import sync_to_async
 import asyncio
+
+import pandas as pd
+from django.forms import modelform_factory
+from django.core.exceptions import ValidationError
+from django.utils.html import escape
+import json
+from tempfile import NamedTemporaryFile
+from django.core.files.base import File
 
 # BASIC
 class IndexView(TemplateView):
@@ -144,17 +152,68 @@ class ConfigImportTemplate_Request(View):
                     
 class ImportPanel(View):
     def get(self, *args, **kwargs):
+        context2return = {}
+        context2return['context2return'] = get_object_or_404(Configuration, app=self.kwargs['app'], model=self.kwargs['model'])
+        context2return['log_related'] = self.request.GET.get('log')
         return render(
             request=self.request,
             template_name='xlsx/core/import_panel.html',
-            context={
-                'config_instance':get_object_or_404(Configuration, app=self.kwargs['app'], model=self.kwargs['model'])
-            }
+            context=context2return
         )
     
     def post(self,*args, **kwargs):
         config_instance = get_object_or_404(Configuration, app=self.kwargs['app'], model=self.kwargs['model'])
-        print(config_instance)
+        template_configuration = Template.objects.filter(configuration=config_instance,type=2)
+        template_send = self.request.FILES['template2upload']
+        if template_configuration and template_send:
+            
+            # Data frame
+            df = pd.read_excel(template_send, engine='openpyxl', nrows=0)
+            
+            # Get columns from file sended
+            columns_header = df.columns.tolist()
+            
+            # Get columns from template configuration
+            template_columns = [i.label for i in template_configuration]
+            
+            if (columns_header == template_columns) and template_send.name.endswith('.xlsx'):
+                file_log = FileLogs.objects.create()
+                df = pd.read_excel(template_send, engine='openpyxl')
+                df['Error details'] = None
+                df.rename(columns={i.label:i.value for i in template_configuration}, inplace=True)
+                dynamicModel = apps.get_model(app_label=config_instance.app,model_name=config_instance.model)
+                dynamicForm = modelform_factory(dynamicModel, fields=[i.value for i in template_configuration])
+                for i,row in df.iterrows():
+                    testData = {
+                        'name':'',
+                        'description':'dfsdfs'
+                    }
+                    form = dynamicForm(data=testData)
+                    if form.is_valid():
+                        print('Validado...')
+                    else:
+                        details = {}
+                        for field,messages in form.errors.items():
+                            errors = []
+                            for message in messages:
+                                errors.append(message)
+                            details[field] = errors
+                        df.at[i,'Error details'] = details
+                        
+                    # Prepare file
+                    with NamedTemporaryFile(suffix='.xlsx', delete=False) as temp:
+                        df.to_excel(temp.name, index=False)
+                        temp.seek(0)
+                        file_log.file.save(f'import_log_{file_log.id}.xlsx', File(temp))
+                        file_log.status = 2
+                        file_log.save()
+                        
+                    url = reverse('xlsx:import_panel', kwargs={
+                        'app': self.kwargs['app'],
+                        'model': self.kwargs['model']
+                    })
+                    return redirect(f"{url}?log={file_log.id}")
+                                
         
         # Compare currrent template configuration with the file sended
         # If the columns are not the same, raise an error
@@ -168,6 +227,12 @@ class ImportPanel(View):
             }
         )
         
+def import_error_download(request, log_id):
+    log = get_object_or_404(FileLogs, id=log_id)
+    if not log.file:
+        raise Http404("No hay archivo de errores disponible.")
+    
+    return FileResponse(log.file.open('rb'), as_attachment=True, filename="import_template_errors.xlsx")
 
 class TemplateGrid(CheckTypeParameter, ListView):
     model = Template

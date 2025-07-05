@@ -16,6 +16,7 @@ urlpatterns = [
     path(route='get-xlsx-file/', view=generate_xlsx_file),
     path(route='async-def/', view=async_testing),
     path(route='import-panel/<str:app>/<str:model>', view=ImportPanel.as_view(), name='import_panel'),
+    path(route='import-template-error-details/<int:log_id>', view=import_error_download, name='import_error_download'),
     
     #PRODUCT
     path(route='product/grid',view=ProductListView.as_view(),name='product_grid'),
