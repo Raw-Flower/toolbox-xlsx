@@ -6,7 +6,7 @@
     <div class="card">
         <div class="card-header">Import panel</div>
         <div class="card-body">
-            <form method="POST" enctype="multipart/form-data" novalidate>
+            <form method="POST" enctype='multipart/form-data'>
                 {% csrf_token %}
                 <div class='mb-2'>
                     <label class="form-label fw-bold">App:</label>
@@ -29,6 +29,17 @@
                     <button class='btn btn-primary' type='submit'>Submit</button>
                 </div>
             </form>
+
+            {% if log_related %}
+            <div class="alert alert-danger">
+                Se generó un archivo con errores.
+                <a href="{% url 'xlsx:import_error_download' log_related %}" class="btn btn-outline-danger btn-sm">
+                Descargar errores
+                </a>
+            </div>
+            {% endif %}
+
+
             <div class="alert alert-info mb-2" role="alert">
                 <h4 class="alert-heading"><strong>Instructions</strong> <i class="bi bi-info-circle"></i></h4>
                 <p>
